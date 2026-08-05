@@ -39,6 +39,14 @@ var hp: float
 var mp: float
 ## 基础最大生命(不含装备加成),升级时累加
 var base_max_hp: float = 100.0
+## 由装备叠加的战斗属性(每帧 _recalc_stats 重新计算)
+var gear_attack_speed_mod: float = 1.0
+var gear_move_speed_bonus: float = 0.0
+var gear_crit_chance: float = 0.0
+var gear_crit_damage: float = 1.5  # 基础暴击倍率 + 装备额外倍率
+var gear_lifesteal: float = 0.0
+var gear_xp_bonus: float = 0.0
+var gear_fire_resist: float = 0.0
 var level := 1
 var xp := 0
 var xp_to_next := 50
@@ -141,7 +149,7 @@ func _tick_timers(delta: float) -> void:
 
 
 func _current_speed() -> float:
-	return base_speed
+	return base_speed + gear_move_speed_bonus
 
 
 ## ---- 射击(左键,弓) ----
@@ -166,10 +174,11 @@ func set_debug_cheats(enabled: bool) -> void:
 
 
 func _current_attack_interval() -> float:
+	var base := attack_interval * gear_attack_speed_mod
 	if draw_speed_timer > 0.0:
 		var factor: float = maxf(0.25, DRAW_SPEED_FACTOR - 0.05 * float(skill_levels.draw - 1))
-		return attack_interval * factor
-	return attack_interval
+		return base * factor
+	return base
 
 
 func _fire_arrow() -> void:
@@ -234,6 +243,10 @@ func attack_damage() -> float:
 	var dmg := base_attack_damage
 	if equipment.weapon != null:
 		dmg += equipment.weapon.damage
+	# 暴击判定:按装备暴击率翻倍
+	if gear_crit_chance > 0.0 and randf() < gear_crit_chance:
+		dmg *= gear_crit_damage
+		notify.emit("暴击! ×%.1f" % gear_crit_damage)
 	return dmg
 
 
@@ -275,6 +288,26 @@ func unequip_item(slot: String) -> void:
 func _recalc_stats() -> void:
 	max_hp = base_max_hp + equipment_max_hp_bonus()
 	hp = minf(hp, max_hp)
+	# 装备附加属性(逐件累加)
+	var atk_spd := 1.0
+	gear_move_speed_bonus = 0.0
+	gear_crit_chance = 0.0
+	gear_crit_damage = 1.5
+	gear_lifesteal = 0.0
+	gear_xp_bonus = 0.0
+	gear_fire_resist = 0.0
+	for item in equipment.values():
+		if item == null:
+			continue
+		atk_spd *= item.attack_speed_mod
+		gear_move_speed_bonus += item.move_speed_bonus * (1.0 + item.move_speed_penalty)
+		gear_crit_chance += item.crit_chance
+		gear_crit_damage += item.crit_damage_bonus
+		gear_lifesteal += item.lifesteal
+		gear_xp_bonus += item.xp_bonus
+		gear_fire_resist += item.fire_resist
+	gear_attack_speed_mod = clampf(atk_spd, 0.4, 3.0)
+	gear_crit_chance = clampf(gear_crit_chance, 0.0, 0.8)
 
 
 ## ---- Q 技能:三连发 ----
@@ -389,7 +422,7 @@ func _use_quick_item(index: int) -> void:
 
 ## ---- 等级与经验 ----
 func add_xp(amount: int) -> void:
-	xp += amount
+	xp += int(amount * (1.0 + gear_xp_bonus))
 	var leveled := false
 	while xp >= xp_to_next:
 		xp -= xp_to_next
