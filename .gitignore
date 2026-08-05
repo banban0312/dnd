@@ -13,3 +13,10 @@
 /assets/roguelike/
 /assets/dungeontileset2/
 /assets/*.zip
+
+# IvoryRed raw 素材(54个原始图标,已精选7个到 sprites/;保留备份)
+/assets/sprites_raw/
+
+# 临时调试目录
+/_debug_backup/
+/_test/
