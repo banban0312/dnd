@@ -52,3 +52,9 @@
 ## 备注
 
 - 后续替换/新增素材时,请保持 CC0 或至少可商用许可(如 CC-BY),并在此处登记来源。
+
+### 装备图标素材(2026-08-05 新增)
+| 来源 | 许可 | 用途 |
+|------|------|------|
+| 0x72 DungeonTileset II | CC0 | 武器图标 icon_bow/sword(裁剪自 weapon_bow/sword 帧) |
+| IvoryRed Armor pack | CC-BY 4.0 | 防具/盾/饰品 spritesheet(54 件),署名:"Armor icons by IvoryRed" |
