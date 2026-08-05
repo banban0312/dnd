@@ -71,7 +71,7 @@ func _setup_ambient_particles() -> void:
 	particles.lifetime = 1.6
 	particles.local_coords = false
 	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	particles.emission_box_extents = Vector2(40, 8)
+	particles.emission_rect_extents = Vector2(40, 8)
 	particles.direction = Vector2.UP
 	particles.spread = 35.0
 	particles.initial_velocity_min = 8.0
