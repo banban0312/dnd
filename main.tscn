@@ -1,0 +1,165 @@
+[gd_scene format=3 uid="uid://bvpd0cdx0p40f"]
+
+[ext_resource type="Script" uid="uid://0ce0e12uekfn" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://7acg6i4k6hxy" path="res://scripts/player.gd" id="2_player"]
+[ext_resource type="Script" uid="uid://dijwnam5xrbfh" path="res://scripts/enemy.gd" id="3_enemy"]
+[ext_resource type="Script" uid="uid://bkgj6iy1v41qu" path="res://scripts/save_point.gd" id="5_save_point"]
+[ext_resource type="Script" uid="uid://dcnbfjmney45n" path="res://scripts/hud.gd" id="6_hud"]
+[ext_resource type="Script" uid="uid://33nd54wr5an2" path="res://scripts/spawner.gd" id="7_spawner"]
+[ext_resource type="Script" uid="uid://dbi5jm0bl04qb" path="res://scripts/map_generator.gd" id="8_map"]
+[ext_resource type="Texture2D" uid="uid://ccow44qihp4vi" path="res://assets/sprites/save_point.png" id="14_save"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/ranger_frames.tres" id="15_ranger_frames"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/goblin_frames.tres" id="16_goblin_frames"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/skeleton_frames.tres" id="17_skeleton_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_goblin"]
+size = Vector2(30, 30)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_contact"]
+size = Vector2(44, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_skeleton"]
+size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_savepoint"]
+size = Vector2(40, 40)
+
+[node name="Main" type="Node2D" unique_id=922436050]
+script = ExtResource("1_main")
+
+[node name="MapGenerator" type="Node2D" parent="." unique_id=646669758]
+script = ExtResource("8_map")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=144025672 groups=["player"]]
+position = Vector2(100, 600)
+collision_mask = 3
+script = ExtResource("2_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=2132934994]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Visual" type="AnimatedSprite2D" parent="Player" unique_id=770823228]
+position = Vector2(0, -15)
+scale = Vector2(2.5, 2.5)
+sprite_frames = ExtResource("15_ranger_frames")
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1765434933]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="Goblin1" type="CharacterBody2D" parent="." unique_id=499171457]
+position = Vector2(300, 600)
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("3_enemy")
+patrol_points = [Vector2(300, 600), Vector2(520, 600)]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goblin1" unique_id=245915708]
+shape = SubResource("RectangleShape2D_goblin")
+
+[node name="Visual" type="AnimatedSprite2D" parent="Goblin1" unique_id=1161515638]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("16_goblin_frames")
+
+[node name="ContactArea" type="Area2D" parent="Goblin1" unique_id=987807655]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goblin1/ContactArea" unique_id=275507699]
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="Goblin2" type="CharacterBody2D" parent="." unique_id=2009473815]
+position = Vector2(640, 180)
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("3_enemy")
+patrol_points = [Vector2(640, 180), Vector2(860, 180)]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goblin2" unique_id=1024008361]
+shape = SubResource("RectangleShape2D_goblin")
+
+[node name="Visual" type="AnimatedSprite2D" parent="Goblin2" unique_id=1270336050]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("16_goblin_frames")
+
+[node name="ContactArea" type="Area2D" parent="Goblin2" unique_id=250429856]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goblin2/ContactArea" unique_id=1744181158]
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="Skeleton1" type="CharacterBody2D" parent="." unique_id=1348092912]
+position = Vector2(380, 300)
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("3_enemy")
+anim_character = "skeleton"
+enemy_name = "骷髅怪"
+max_hp = 40.0
+move_speed = 45.0
+chase_speed = 80.0
+aggro_radius = 220.0
+contact_damage = 12.0
+xp_reward = 20
+body_color = Color(0.82, 0.82, 0.78, 1)
+patrol_points = [Vector2(380, 300), Vector2(560, 420)]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Skeleton1" unique_id=621408578]
+shape = SubResource("RectangleShape2D_skeleton")
+
+[node name="Visual" type="AnimatedSprite2D" parent="Skeleton1" unique_id=1529167828]
+scale = Vector2(2.5, 2.5)
+sprite_frames = ExtResource("17_skeleton_frames")
+
+[node name="ContactArea" type="Area2D" parent="Skeleton1" unique_id=1223388552]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Skeleton1/ContactArea" unique_id=1650057057]
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="Skeleton2" type="CharacterBody2D" parent="." unique_id=1961757670]
+position = Vector2(900, 560)
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("3_enemy")
+anim_character = "skeleton"
+enemy_name = "骷髅怪"
+max_hp = 40.0
+move_speed = 45.0
+chase_speed = 80.0
+aggro_radius = 220.0
+contact_damage = 12.0
+xp_reward = 20
+body_color = Color(0.82, 0.82, 0.78, 1)
+patrol_points = [Vector2(900, 560), Vector2(1100, 560)]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Skeleton2" unique_id=1166438192]
+shape = SubResource("RectangleShape2D_skeleton")
+
+[node name="Visual" type="AnimatedSprite2D" parent="Skeleton2" unique_id=75186741]
+scale = Vector2(2.5, 2.5)
+sprite_frames = ExtResource("17_skeleton_frames")
+
+[node name="ContactArea" type="Area2D" parent="Skeleton2" unique_id=2044014589]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Skeleton2/ContactArea" unique_id=1433160215]
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="SavePoint" type="Area2D" parent="." unique_id=23244126]
+script = ExtResource("5_save_point")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SavePoint" unique_id=186200666]
+shape = SubResource("RectangleShape2D_savepoint")
+
+[node name="Visual" type="Sprite2D" parent="SavePoint" unique_id=556990327]
+scale = Vector2(1.25, 1.25)
+texture = ExtResource("14_save")
+
+[node name="Spawner" type="Node2D" parent="." unique_id=59837285]
+script = ExtResource("7_spawner")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1121746798]
+script = ExtResource("6_hud")

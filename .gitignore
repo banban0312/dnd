@@ -1,0 +1,15 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# 本地存档(不提交)
+/save/
+
+# AI 助手工作目录(开发日志/记忆,不提交)
+/.workbuddy/
+
+# 原始素材包(带 .gdignore、不参与构建,仅开发备份;CC0 可随时重新下载)
+/assets/crawl-tiles/
+/assets/roguelike/
+/assets/dungeontileset2/
+/assets/*.zip
