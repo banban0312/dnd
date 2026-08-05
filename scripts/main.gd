@@ -268,7 +268,11 @@ func _on_enemy_died(enemy: Enemy) -> void:
 
 
 func _on_enemy_drop_requested(pos: Vector2, item: ItemData) -> void:
-	spawn_potion(pos, item)
+	match item.item_type:
+		ItemData.ItemType.POTION:
+			spawn_potion(pos, item)
+		_:
+			spawn_equipment(pos, item)
 
 
 func _on_chest_xp_requested(amount: int) -> void:
@@ -284,6 +288,13 @@ func _on_player_died() -> void:
 
 func spawn_potion(pos: Vector2, item: ItemData) -> void:
 	var pickup := PotionPickup.new()
+	pickup.setup(item)
+	pickup.global_position = pos
+	add_child(pickup)
+
+
+func spawn_equipment(pos: Vector2, item: ItemData) -> void:
+	var pickup := EquipmentPickup.new()
 	pickup.setup(item)
 	pickup.global_position = pos
 	add_child(pickup)

@@ -128,12 +128,25 @@ func take_damage(amount: float, _source: Node = null) -> void:
 	health_changed.emit(hp, max_hp)
 
 
-## Boss 固定掉落 2~3 瓶药
+## Boss 固定掉落 2~3 瓶药 + 1 件装备(高品级)
 func _roll_drop() -> void:
+	# 药水
 	drop_requested.emit(global_position + Vector2(-24, 0), ItemData.red_potion())
 	drop_requested.emit(global_position + Vector2(24, 0), ItemData.blue_potion())
 	if randf() < 0.6:
 		drop_requested.emit(global_position + Vector2(0, -24), ItemData.red_potion())
+	# 装备(保底绿,30%紫弓,20%紫甲)
+	var r := randf()
+	var equip: ItemData
+	if r < 0.3:
+		equip = ItemData.elven_bow()
+	elif r < 0.5:
+		equip = ItemData.dragonscale()
+	elif r < 0.7:
+		equip = ItemData.longbow()
+	else:
+		equip = ItemData.recurve_bow()
+	drop_requested.emit(global_position + Vector2(0, -60), equip)
 
 
 ## Boss 死亡:重白闪 + 更大缩放 + 长淡出 + 专属音效

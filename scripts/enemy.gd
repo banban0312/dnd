@@ -153,7 +153,21 @@ func _die() -> void:
 
 
 func _roll_drop() -> void:
-	if randf() >= drop_chance:
-		return
-	var item: ItemData = ItemData.red_potion() if randi() % 2 == 0 else ItemData.blue_potion()
-	drop_requested.emit(global_position, item)
+	# 药水掉落(30%)
+	if randf() < drop_chance:
+		var potion: ItemData = ItemData.red_potion() if randi() % 2 == 0 else ItemData.blue_potion()
+		drop_requested.emit(global_position, potion)
+	# 装备掉落(8% 概率,低品级)
+	if randf() < 0.08:
+		drop_requested.emit(global_position, _roll_equipment())
+
+
+## 普通敌人装备池:白/绿品级
+func _roll_equipment() -> ItemData:
+	var r := randf()
+	if r < 0.5:
+		return ItemData.survival_bow()
+	elif r < 0.7:
+		return ItemData.recurve_bow()
+	else:
+		return ItemData.chainmail()
