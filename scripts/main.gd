@@ -15,6 +15,7 @@ func _ready() -> void:
 	hud.setup(player, spawner, self)
 	player.died.connect(_on_player_died)
 	player.notify.connect(hud.show_message)
+	player.item_dropped.connect(_on_item_dropped)
 	spawner.enemy_spawned.connect(_on_enemy_spawned)
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.died.connect(_on_enemy_died)
@@ -265,6 +266,8 @@ func _on_enemy_spawned(enemy: Enemy) -> void:
 
 func _on_enemy_died(enemy: Enemy) -> void:
 	player.add_xp(enemy.xp_reward)
+	if enemy is Boss:
+		hud.hide_boss_bar()
 
 
 func _on_enemy_drop_requested(pos: Vector2, item: ItemData) -> void:
@@ -298,3 +301,11 @@ func spawn_equipment(pos: Vector2, item: ItemData) -> void:
 	pickup.setup(item)
 	pickup.global_position = pos
 	add_child(pickup)
+
+
+func _on_item_dropped(item: ItemData, pos: Vector2) -> void:
+	match item.item_type:
+		ItemData.ItemType.POTION:
+			spawn_potion(pos + Vector2(randf_range(-16, 16), randf_range(-16, 0)), item)
+		_:
+			spawn_equipment(pos + Vector2(randf_range(-16, 16), randf_range(-16, 0)), item)

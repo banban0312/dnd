@@ -46,19 +46,12 @@ func _play_idle_float() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
-		var slot := ""
-		match item.item_type:
-			ItemData.ItemType.WEAPON:
-				slot = "weapon"
-			ItemData.ItemType.ARMOR:
-				slot = "armor"
-		if slot != "":
-			body.equip_item(slot, item)
+		if body.add_to_backpack(item):
 			Sfx.play(SoundFactory.pickup(), -8.0)
-			body.notify.emit("装备 %s" % item.item_name)
+			body.notify.emit("获得 %s" % item.item_name)
 			queue_free()
 		else:
-			body.notify.emit("戒指槽位尚未开放")
+			body.notify.emit("背包已满(%d/%d)" % [body.backpack.size(), body.BACKPACK_SIZE])
 
 
 ## 按 item_id 匹配图标(复用 HUD icon 体系)

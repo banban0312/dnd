@@ -37,6 +37,10 @@ var skill_regen_label: Label
 var inv_quick_label: Label
 var inv_weapon_label: Label
 var inv_armor_label: Label
+var inv_weapon_icon: TextureRect
+var inv_armor_icon: TextureRect
+var inv_backpack_container: Control
+var inv_backpack_buttons: Array[Button] = []
 var debug_panel: Control
 var spawn_button: Button
 var cheat_button: Button
@@ -174,23 +178,26 @@ func _build_skill_panel(parent: Control) -> void:
 
 
 func _build_inventory_panel(parent: Control) -> void:
-	inventory_panel = _make_panel(parent, Vector2(440, 150), Vector2(400, 330), "背包与装备")
+	inventory_panel = _make_panel(parent, Vector2(395, 50), Vector2(490, 540), "背包与装备")
 	inventory_panel.visible = false
-	inv_quick_label = _make_label(inventory_panel, "快捷栏(掉落物):", Vector2(14, 42), 14)
-	inv_weapon_label = _make_label(inventory_panel, "武器: 无", Vector2(14, 68), 14)
-	inv_armor_label = _make_label(inventory_panel, "防具: 无", Vector2(14, 92), 14)
-	_make_label(inventory_panel, "武器选择(测试):", Vector2(14, 124), 13)
-	var bows: Array[ItemData] = [
-		ItemData.survival_bow(),
-		ItemData.recurve_bow(),
-		ItemData.longbow(),
-		ItemData.elven_bow(),
-	]
-	for i in bows.size():
-		_make_button(inventory_panel, bows[i].item_name, Vector2(14 + i * 95, 146), Vector2(90, 30),
-			_on_equip_bow.bind(bows[i]))
-	_make_label(inventory_panel, "按 I 关闭面板 · 1/2/3 用药水", Vector2(14, 196), 12)
-	_make_label(inventory_panel, "装备默认增加最大生命,精灵弓额外加速箭矢", Vector2(14, 218), 11)
+
+	inv_weapon_icon = _make_texture_rect(inventory_panel, Vector2(14, 42), Vector2(36, 36))
+	inv_weapon_label = _make_label(inventory_panel, "武器: 无", Vector2(56, 52), 14)
+	_make_button(inventory_panel, "卸下", Vector2(200, 42), Vector2(60, 28), _on_unequip_weapon)
+
+	inv_armor_icon = _make_texture_rect(inventory_panel, Vector2(280, 42), Vector2(36, 36))
+	inv_armor_label = _make_label(inventory_panel, "防具: 无", Vector2(322, 52), 14)
+	_make_button(inventory_panel, "卸下", Vector2(410, 42), Vector2(60, 28), _on_unequip_armor)
+
+	inv_quick_label = _make_label(inventory_panel, "", Vector2(14, 84), 13)
+
+	_make_label(inventory_panel, "背包(左键装备/使用,右键丢弃):", Vector2(14, 122), 13)
+	inv_backpack_container = Control.new()
+	inv_backpack_container.position = Vector2(10, 144)
+	inv_backpack_container.size = Vector2(470, 376)
+	inventory_panel.add_child(inv_backpack_container)
+	_rebuild_backpack_grid()
+	_make_label(inventory_panel, "按 I 关闭面板 · 1/2/3 用快捷栏药水", Vector2(14, 518), 11)
 
 
 func _build_debug_panel(parent: Control) -> void:
@@ -232,9 +239,93 @@ func _refresh_inventory() -> void:
 	var armor_name: String = "无" if player.equipment.armor == null else player.equipment.armor.item_name
 	equip_label.text = "武器: %s | 防具: %s" % [weapon_name, armor_name]
 	if inv_quick_label != null:
-		inv_quick_label.text = "快捷栏(掉落物): " + "  ".join(parts)
-		inv_weapon_label.text = "武器: %s(%s)" % [weapon_name, _weapon_desc()]
-		inv_armor_label.text = "防具: %s(%s)" % [armor_name, _armor_desc()]
+		inv_quick_label.text = "快捷栏: " + "  ".join(parts)
+	inv_weapon_label.text = "武器: %s(%s)" % [weapon_name, _weapon_desc()]
+	inv_armor_label.text = "防具: %s(%s)" % [armor_name, _armor_desc()]
+	inv_weapon_icon.texture = _get_item_icon(player.equipment.weapon)
+	inv_armor_icon.texture = _get_item_icon(player.equipment.armor)
+	for i in player.BACKPACK_SIZE:
+		var btn: Button = inv_backpack_buttons[i] if i < inv_backpack_buttons.size() else null
+		if btn == null:
+			continue
+		var item: ItemData = player.backpack_at(i)
+		btn.text = item.item_name if item != null else ""
+		btn.icon = _get_item_icon(item)
+		btn.tooltip_text = item.description if item != null else ""
+
+
+func _rebuild_backpack_grid() -> void:
+	for btn in inv_backpack_buttons:
+		btn.queue_free()
+	inv_backpack_buttons.clear()
+	const COLS := 5
+	const GAP := 4
+	const CELL := 88
+	for i in player.BACKPACK_SIZE:
+		var btn := Button.new()
+		btn.position = Vector2((i % COLS) * (CELL + GAP), (i / COLS) * (CELL + GAP))
+		btn.size = Vector2(CELL, CELL)
+		btn.flat = true
+		btn.add_theme_font_size_override("font_size", 11)
+		btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		btn.add_theme_stylebox_override("normal", _box_style(Color(0.11, 0.09, 0.11, 0.96)))
+		btn.add_theme_stylebox_override("hover", _box_style(Color(0.2, 0.16, 0.12, 1.0)))
+		btn.add_theme_color_override("font_color", C_TEXT)
+		btn.pressed.connect(_on_backpack_clicked.bind(i))
+		btn.gui_input.connect(_on_backpack_gui_input.bind(i))
+		inv_backpack_container.add_child(btn)
+		inv_backpack_buttons.append(btn)
+
+
+func _on_backpack_clicked(index: int) -> void:
+	var item := player.backpack_at(index)
+	if item == null:
+		return
+	match item.item_type:
+		ItemData.ItemType.POTION:
+			player.use_backpack_item(index)
+		ItemData.ItemType.WEAPON, ItemData.ItemType.ARMOR:
+			_equip_from_backpack(index, item)
+
+
+func _on_backpack_gui_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		player.drop_backpack_item(index)
+
+
+func _equip_from_backpack(index: int, item: ItemData) -> void:
+	var slot := ""
+	match item.item_type:
+		ItemData.ItemType.WEAPON: slot = "weapon"
+		ItemData.ItemType.ARMOR: slot = "armor"
+	if slot == "":
+		return
+	var old: ItemData = player.equipment[slot]
+	if old != null and not player.add_to_backpack(old):
+		player.notify.emit("背包已满,无法卸下旧装备")
+		return
+	player.equip_item(slot, item)
+	player.remove_from_backpack(index)
+	player.notify.emit("装备 %s" % item.item_name)
+
+
+func _on_unequip_weapon() -> void:
+	_unequip_to_backpack("weapon")
+
+
+func _on_unequip_armor() -> void:
+	_unequip_to_backpack("armor")
+
+
+func _unequip_to_backpack(slot: String) -> void:
+	var item: ItemData = player.equipment[slot]
+	if item == null:
+		return
+	if player.add_to_backpack(item):
+		player.unequip_item(slot)
+		player.notify.emit("卸下 %s" % item.item_name)
+	else:
+		player.notify.emit("背包已满,无法卸下")
 
 
 func _weapon_desc() -> String:
@@ -270,14 +361,6 @@ func _on_spawn_toggle_pressed() -> void:
 		return
 	spawner.set_spawning(not spawner.enabled)
 	refresh_debug()
-
-
-func _on_equip_bow(item: ItemData) -> void:
-	if player == null:
-		return
-	player.equip_item("weapon", item)
-	_refresh_inventory()
-	player.notify.emit("装备了 %s: %s" % [item.item_name, _weapon_desc()])
 
 
 func _on_cheat_toggle_pressed() -> void:
@@ -335,6 +418,43 @@ func _make_button(parent: Control, text: String, pos: Vector2, size: Vector2, ca
 	btn.pressed.connect(callback)
 	parent.add_child(btn)
 	return btn
+
+
+## 装备图标映射:根据 ItemData.item_id 返回对应贴图
+func _get_item_icon(item: ItemData) -> Texture2D:
+	if item == null:
+		return null
+	match item.item_id:
+		"survival_bow", "recurve_bow", "longbow", "elven_bow", "dragon_bow":
+			return preload("res://assets/sprites/icon_bow.png")
+		"iron_sword", "oath_sword":
+			return preload("res://assets/sprites/icon_sword.png")
+		"cloth_armor":
+			return preload("res://assets/sprites/icon_cloth.png")
+		"chainmail":
+			return preload("res://assets/sprites/icon_chainmail.png")
+		"iron_plate":
+			return preload("res://assets/sprites/icon_plate.png")
+		"dragonscale":
+			return preload("res://assets/sprites/icon_dragon.png")
+		"wooden_shield", "iron_shield":
+			return preload("res://assets/sprites/icon_shield.png")
+		"lucky_ring", "wind_ring":
+			return preload("res://assets/sprites/icon_ring.png")
+		"guard_amulet", "blood_amulet", "sage_eye":
+			return preload("res://assets/sprites/icon_amulet.png")
+		_:
+			return null
+
+
+func _make_texture_rect(parent: Control, pos: Vector2, size: Vector2) -> TextureRect:
+	var tr := TextureRect.new()
+	tr.position = pos
+	tr.size = size
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	parent.add_child(tr)
+	return tr
 
 
 func _make_label(parent: Control, text: String, pos: Vector2, font_size: int) -> Label:

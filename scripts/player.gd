@@ -6,6 +6,10 @@ signal stats_changed
 signal inventory_changed
 signal died
 signal notify(text: String)
+signal item_dropped(item: ItemData, pos: Vector2)
+
+const BACKPACK_SIZE := 20
+const QUICKBAR_SIZE := 3
 
 ## 基础数值
 @export var base_speed: float = 260.0
@@ -54,6 +58,7 @@ var skill_points := 0
 var skill_levels: Dictionary[String, int] = {"triple": 1, "draw": 1}
 var quickbar: Array[ItemData] = [null, null, null]
 var equipment: Dictionary[String, ItemData] = {"weapon": null, "armor": null}
+var backpack: Array[ItemData] = []
 
 var attack_cd := 0.0
 var burst_remaining := 0
@@ -155,6 +160,9 @@ func _current_speed() -> float:
 ## ---- 射击(左键,弓) ----
 func _try_shoot() -> void:
 	if dead or (attack_cd > 0.0 and not debug_no_cd):
+		return
+	if equipment.weapon == null:
+		notify.emit("没有装备武器!")
 		return
 	_fire_arrow()
 	attack_cd = _current_attack_interval()
@@ -393,6 +401,60 @@ func _try_dodge(move_dir: Vector2) -> void:
 	notify.emit("闪避!(无敌 %.1fs)" % dodge_iframes)
 
 
+## ---- 背包(通用存储,装备/药水拾取默认进背包) ----
+func add_to_backpack(item: ItemData) -> bool:
+	if backpack.size() >= BACKPACK_SIZE:
+		return false
+	backpack.append(item)
+	inventory_changed.emit()
+	return true
+
+
+func backpack_at(index: int) -> ItemData:
+	if index < 0 or index >= backpack.size():
+		return null
+	return backpack[index]
+
+
+func remove_from_backpack(index: int) -> ItemData:
+	if index < 0 or index >= backpack.size():
+		return null
+	var item: ItemData = backpack[index]
+	backpack.remove_at(index)
+	inventory_changed.emit()
+	return item
+
+
+## 丢弃背包物品(信号上抛,由主场景做掉落)
+func drop_backpack_item(index: int) -> bool:
+	var item := remove_from_backpack(index)
+	if item == null:
+		return false
+	item_dropped.emit(item, global_position)
+	notify.emit("丢弃 %s" % item.item_name)
+	return true
+
+
+## 使用背包物品(药水回血/蓝,消耗品)
+func use_backpack_item(index: int) -> bool:
+	var item := backpack_at(index)
+	if item == null:
+		return false
+	if item.item_type == ItemData.ItemType.POTION:
+		if item.potion_type == ItemData.PotionType.RED:
+			hp = max_hp
+			notify.emit("使用 %s,生命值恢复至满" % item.item_name)
+		else:
+			mp = max_mp
+			notify.emit("使用 %s,蓝量恢复至满" % item.item_name)
+		backpack.remove_at(index)
+		Sfx.play(SoundFactory.pickup(), -6.0)
+		inventory_changed.emit()
+		stats_changed.emit()
+		return true
+	return false
+
+
 ## ---- 快捷栏(仅掉落消耗品) ----
 func add_item_to_quickbar(item: ItemData) -> bool:
 	for i in QUICKBAR_SIZE:
@@ -467,6 +529,7 @@ func export_state() -> Dictionary:
 		"weapon": _item_id(equipment.weapon),
 		"armor": _item_id(equipment.armor),
 		"quickbar": qb,
+		"backpack": _export_backpack(),
 	}
 
 
@@ -485,6 +548,12 @@ func import_state(data: Dictionary) -> void:
 	var qb: Array = data.get("quickbar", [null, null, null])
 	for i in QUICKBAR_SIZE:
 		quickbar[i] = ItemData.from_name(str(qb[i])) if i < qb.size() and qb[i] != null else null
+	backpack.clear()
+	var bk: Array = data.get("backpack", [])
+	for id in bk:
+		var restored := ItemData.from_name(str(id))
+		if restored != null:
+			backpack.append(restored)
 	stats_changed.emit()
 	inventory_changed.emit()
 
@@ -494,6 +563,13 @@ func _item_id(item: ItemData) -> String:
 	if item == null:
 		return ""
 	return item.item_id
+
+
+func _export_backpack() -> Array[String]:
+	var out: Array[String] = []
+	for item in backpack:
+		out.append(_item_id(item))
+	return out
 
 
 func respawn_at(pos: Vector2) -> void:

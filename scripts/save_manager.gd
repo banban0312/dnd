@@ -38,6 +38,7 @@ static func save_game(player: Player, map_gen: MapGenerator, respawn: Vector2) -
 	cfg.set_value("player", "weapon", pdata.weapon)
 	cfg.set_value("player", "armor", pdata.armor)
 	cfg.set_value("player", "quickbar", pdata.quickbar)
+	cfg.set_value("player", "backpack", pdata.backpack)
 	cfg.set_value("map", "rng_seed", map_gen.used_seed)
 	cfg.set_value("respawn", "x", respawn.x)
 	cfg.set_value("respawn", "y", respawn.y)
@@ -64,6 +65,7 @@ static func load_game() -> Dictionary:
 		"weapon": cfg.get_value("player", "weapon", ""),
 		"armor": cfg.get_value("player", "armor", ""),
 		"quickbar": cfg.get_value("player", "quickbar", [null, null, null]),
+		"backpack": cfg.get_value("player", "backpack", []),
 	}
 	data["rng_seed"] = cfg.get_value("map", "rng_seed", 0)
 	data["respawn"] = Vector2(

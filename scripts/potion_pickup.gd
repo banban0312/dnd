@@ -53,8 +53,8 @@ func _play_idle_float() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
-		if body.add_item_to_quickbar(item):
+		if body.add_to_backpack(item) or body.add_item_to_quickbar(item):
 			Sfx.play(SoundFactory.pickup(), -8.0)
 			queue_free()
 		else:
-			body.notify.emit("快捷栏已满,无法拾取")
+			body.notify.emit("背包与快捷栏已满,无法拾取")
