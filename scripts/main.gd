@@ -7,7 +7,6 @@ class_name Main
 @onready var spawner: Spawner = $Spawner
 @onready var hud: Hud = $HUD
 @onready var map_gen: MapGenerator = $MapGenerator
-@onready var save_point: SavePoint = $SavePoint
 
 var respawn_point := Vector2.ZERO
 
@@ -17,7 +16,6 @@ func _ready() -> void:
 	player.died.connect(_on_player_died)
 	player.notify.connect(hud.show_message)
 	spawner.enemy_spawned.connect(_on_enemy_spawned)
-	save_point.respawn_requested.connect(set_respawn_point)
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.died.connect(_on_enemy_died)
 		enemy.drop_requested.connect(_on_enemy_drop_requested)
@@ -44,7 +42,6 @@ func _continue_game() -> void:
 	_setup_world()
 	player.import_state(data.get("player", {}))
 	respawn_point = data.get("respawn", map_gen.save_point_pos)
-	save_point.global_position = respawn_point
 	hud.show_message("欢迎回来,冒险者(Lv%d)" % player.level)
 
 
@@ -53,8 +50,7 @@ func _setup_world() -> void:
 	map_gen.generate()
 	_setup_camera()
 	player.global_position = map_gen.player_spawn
-	respawn_point = map_gen.save_point_pos
-	save_point.global_position = map_gen.save_point_pos
+	respawn_point = _pick_respawn()
 	spawner.spawn_points = map_gen.enemy_points.duplicate()
 	_place_fixed_enemies()
 	_spawn_chests()
@@ -170,13 +166,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## 存档点激活:记录重生点并立即写盘
-func set_respawn_point(pos: Vector2) -> void:
-	respawn_point = pos
-	save_now()
-	player.notify.emit("已记录存档点(已保存)")
+## 从所有房间门洞中随机挑一个作为复活点(fallback:玩家出生点)
+func _pick_respawn() -> Vector2:
+	var doors: Array[Vector2] = map_gen.door_centers
+	if doors.is_empty():
+		return map_gen.player_spawn
+	return doors[randi() % doors.size()]
 
 
-## 手动保存当前进度
 func save_now() -> void:
 	SaveManager.save_game(player, map_gen, respawn_point)
 	player.notify.emit("已保存")
@@ -279,8 +276,10 @@ func _on_chest_xp_requested(amount: int) -> void:
 
 
 func _on_player_died() -> void:
+	respawn_point = _pick_respawn()
 	player.respawn_at(respawn_point)
-	hud.show_message("你倒下了……已在存档点重生")
+	save_now()
+	hud.show_message("你倒下了……在门洞处复活,已保存")
 
 
 func spawn_potion(pos: Vector2, item: ItemData) -> void:
