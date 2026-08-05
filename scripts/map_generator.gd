@@ -30,6 +30,10 @@ class RoomData:
 @export var enemy_points_per_room := 4
 @export var rng_seed := 0
 
+## 中心 Boss 房常量(BOSS_ARENA_HALF=领地半宽;PLAYER_SPAWN_OFFSET=出生点相对中心偏移)
+const BOSS_ARENA_HALF := Vector2(200, 200)
+const PLAYER_SPAWN_OFFSET := Vector2(0, 260)
+
 var rng := RandomNumberGenerator.new()
 var rooms: Array[RoomData] = []
 
@@ -43,6 +47,9 @@ var save_point_pos := Vector2.ZERO
 var enemy_points: Array[Vector2] = []
 var patrol_targets: Array[Vector2] = []
 var chest_points: Array[Vector2] = []
+## 中心 Boss 房输出(供脚本使用)
+var boss_spawn := Vector2.ZERO
+var boss_arena := Rect2()
 
 ## 调试/验证用数据
 var wall_segments: Array[Rect2] = []
@@ -177,6 +184,7 @@ func _add_wall_segment(pos: Vector2, size: Vector2) -> void:
 
 func _place_obstacles() -> void:
 	var spawn_room := rooms[grid_cols * (grid_rows / 2) + grid_cols / 2]
+	var room_center := spawn_room.rect.get_center()
 	for room in rooms:
 		var count := rng.randi_range(min_obstacles, max_obstacles)
 		for i in count:
@@ -191,7 +199,9 @@ func _place_obstacles() -> void:
 					size = Vector2(40, 120)
 			var avoid: Array[Rect2] = obstacle_rects.duplicate()
 			if room == spawn_room:
-				avoid.append(Rect2(spawn_room.rect.get_center() - Vector2(140, 140), Vector2(280, 280)))
+				# Boss 领地(中心 400×400,grow 40 留余量)+ 出生点保护
+				avoid.append(Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0).grow(40))
+				avoid.append(Rect2(room_center + PLAYER_SPAWN_OFFSET - Vector2(120, 120), Vector2(240, 240)))
 			var p := _random_room_point(room, obstacle_margin + maxf(size.x, size.y) * 0.5, avoid)
 			_add_obstacle(p, size, type_index)
 
@@ -253,16 +263,22 @@ func _near_any_door(room: RoomData, p: Vector2, radius: float) -> bool:
 
 
 func _compute_points() -> void:
-	# 出生点:中央房间中心
 	var center_room := rooms[grid_cols * (grid_rows / 2) + grid_cols / 2]
-	player_spawn = center_room.rect.get_center()
-	save_point_pos = center_room.rect.get_center()
+	var room_center := center_room.rect.get_center()
 
-	# 每房间生成若干敌人出生点与宝箱点
+	# Boss 领地:中央房间中心 400×400 矩形
+	boss_spawn = room_center
+	boss_arena = Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0)
+
+	# 出生点/存档点:中心房间内、领地之外(正下方偏移)
+	player_spawn = room_center + PLAYER_SPAWN_OFFSET
+	save_point_pos = player_spawn
+
+	# 中心房间是 Boss 房,不生成小怪与宝箱
 	for room in rooms:
-		var avoid: Array[Rect2] = obstacle_rects.duplicate()
 		if room == center_room:
-			avoid.append(Rect2(player_spawn - Vector2(120, 120), Vector2(240, 240)))
+			continue
+		var avoid: Array[Rect2] = obstacle_rects.duplicate()
 		for i in enemy_points_per_room:
 			enemy_points.append(_random_room_point(room, 80.0, avoid))
 			patrol_targets.append(_random_room_point(room, 80.0, avoid))

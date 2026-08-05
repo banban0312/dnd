@@ -116,3 +116,21 @@ static func die() -> AudioStreamWAV:
 			{"f0": 300.0, "f1": 220.0, "dur": 0.12, "shape": "sine"},
 			{"f0": 160.0, "f1": 110.0, "dur": 0.22, "shape": "sine"},
 		], -6.0))
+
+
+## Boss 仇恨激活:低吼(方波下扫 + 噪声)
+static func boss_roar() -> AudioStreamWAV:
+	return _cached("boss_roar", func() -> AudioStreamWAV:
+		return _synth([
+			{"f0": 130.0, "f1": 90.0, "dur": 0.35, "shape": "square"},
+			{"f0": 110.0, "f1": 70.0, "dur": 0.3, "shape": "noise"},
+		], -4.0))
+
+
+## Boss 死亡:沉重长音 + 震颤
+static func boss_die() -> AudioStreamWAV:
+	return _cached("boss_die", func() -> AudioStreamWAV:
+		return _synth([
+			{"f0": 160.0, "f1": 60.0, "dur": 0.5, "shape": "sine"},
+			{"f0": 90.0, "f1": 40.0, "dur": 0.6, "shape": "square"},
+		], -2.0))

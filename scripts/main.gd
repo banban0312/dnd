@@ -58,6 +58,7 @@ func _setup_world() -> void:
 	spawner.spawn_points = map_gen.enemy_points.duplicate()
 	_place_fixed_enemies()
 	_spawn_chests()
+	_spawn_boss()
 
 
 func _setup_camera() -> void:
@@ -106,6 +107,49 @@ func _spawn_chests() -> void:
 		chest.potion_requested.connect(spawn_potion)
 		chest.xp_requested.connect(_on_chest_xp_requested)
 		add_child(chest)
+
+
+## 生成中心 Boss:独眼巨魔(注入领地/数值,连接血条/掉落/经验信号)
+func _spawn_boss() -> void:
+	var boss := Boss.new()
+	boss.enemy_name = "独眼巨魔"
+	boss.max_hp = 800.0
+	boss.move_speed = 55.0
+	boss.chase_speed = 120.0
+	boss.contact_damage = 25.0
+	boss.attack_interval = 1.2
+	boss.xp_reward = 200
+	boss.arena_rect = map_gen.boss_arena
+	boss.home_pos = map_gen.boss_spawn
+	_build_boss_body(boss)
+	boss.global_position = map_gen.boss_spawn
+	add_child(boss)
+	boss.died.connect(_on_enemy_died)
+	boss.died.connect(hud.hide_boss_bar)
+	boss.drop_requested.connect(_on_enemy_drop_requested)
+	boss.health_changed.connect(hud.update_boss_bar)
+	hud.show_boss_bar(boss)
+
+
+## Boss 物理节点:碰撞体(70×70)+ 接触伤害区(64×64)
+func _build_boss_body(boss: Boss) -> void:
+	boss.collision_layer = Spawner.ENEMY_LAYER
+	boss.collision_mask = 3
+	var body_shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(70, 70)
+	body_shape.shape = rect
+	boss.add_child(body_shape)
+	var contact := Area2D.new()
+	contact.name = "ContactArea"
+	contact.collision_layer = 0
+	contact.collision_mask = 1
+	var contact_shape := CollisionShape2D.new()
+	var c_rect := RectangleShape2D.new()
+	c_rect.size = Vector2(64, 64)
+	contact_shape.shape = c_rect
+	contact.add_child(contact_shape)
+	boss.add_child(contact)
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -38,10 +38,12 @@ func _ready() -> void:
 	hp = max_hp
 	add_to_group("enemies")
 	cached_player = get_tree().get_first_node_in_group("player") as Player
-	visual_sprite = $Visual as AnimatedSprite2D
-	if visual_sprite.sprite_frames == null:
+	# 视觉节点可选(Boss等特殊单位用Sprite2D);存在且未挂帧资源时补默认动画
+	var visual_node := get_node_or_null("Visual")
+	visual_sprite = visual_node as AnimatedSprite2D
+	if visual_sprite != null and visual_sprite.sprite_frames == null:
 		visual_sprite.sprite_frames = AnimFactory.make_frames(anim_character)
-	visual_sprite.play("idle")
+		visual_sprite.play("idle")
 	_setup_shadow()
 
 

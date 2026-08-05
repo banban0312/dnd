@@ -3,6 +3,7 @@ class_name Hud
 ## HUD:暗黑史诗风状态栏/装备栏/技能栏/测试工具(纯代码构建 UI)。
 
 const BAR_WIDTH := 260.0
+const BOSSBAR_WIDTH := 432.0
 
 ## 主题色:暗底 + 暗金描边
 const C_PANEL := Color(0.055, 0.045, 0.075, 0.97)
@@ -41,6 +42,10 @@ var spawn_button: Button
 var cheat_button: Button
 var enemy_count_label: Label
 var debug_tick := 0.0
+## Boss 血条(顶部中央,默认隐藏)
+var boss_bar: Control
+var boss_name_label: Label
+var boss_bar_fill: ColorRect
 
 
 func setup(p_player: Player, p_spawner: Spawner = null, p_main: Main = null) -> void:
@@ -125,6 +130,35 @@ func _build_ui() -> void:
 	_build_skill_panel(root)
 	_build_inventory_panel(root)
 	_build_debug_panel(root)
+	_build_boss_bar(root)
+
+
+## 顶部 Boss 血条(默认隐藏,Boss 出场显示,受击实时刷新,死亡隐藏)
+func _build_boss_bar(parent: Control) -> void:
+	boss_bar = _make_panel(parent, Vector2(424, 18), Vector2(432, 52), "")
+	boss_name_label = _make_label(boss_bar, "独眼巨魔", Vector2(0, 5), 15)
+	boss_name_label.size = Vector2(432, 20)
+	boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_name_label.add_theme_color_override("font_color", Color(0.95, 0.32, 0.26))
+	boss_bar_fill = _make_bar(boss_bar, Vector2(14, 27), Color(0.72, 0.12, 0.08), BOSSBAR_WIDTH)
+	boss_bar.visible = false
+
+
+func show_boss_bar(boss: Boss) -> void:
+	boss_bar.visible = true
+	boss_name_label.text = boss.enemy_name
+	boss_bar_fill.size.x = (BOSSBAR_WIDTH - 2.0) * clampf(boss.hp / boss.max_hp, 0.0, 1.0)
+
+
+func update_boss_bar(current: float, max: float) -> void:
+	if boss_bar == null or not boss_bar.visible:
+		return
+	boss_bar_fill.size.x = (BOSSBAR_WIDTH - 2.0) * clampf(current / max, 0.0, 1.0)
+
+
+func hide_boss_bar() -> void:
+	if boss_bar != null:
+		boss_bar.visible = false
 
 
 func _build_skill_panel(parent: Control) -> void:
@@ -315,20 +349,20 @@ func _make_label(parent: Control, text: String, pos: Vector2, font_size: int) ->
 	return label
 
 
-func _make_bar(parent: Control, pos: Vector2, color: Color) -> ColorRect:
+func _make_bar(parent: Control, pos: Vector2, color: Color, width: float = BAR_WIDTH) -> ColorRect:
 	var bg := Panel.new()
 	bg.position = pos
-	bg.size = Vector2(BAR_WIDTH, 16)
+	bg.size = Vector2(width, 16)
 	bg.add_theme_stylebox_override("panel", _box_style(Color(0.1, 0.08, 0.1, 0.95)))
 	parent.add_child(bg)
 	var fill := ColorRect.new()
 	fill.position = Vector2(1, 1)
-	fill.size = Vector2(BAR_WIDTH - 2.0, 14)
+	fill.size = Vector2(width - 2.0, 14)
 	fill.color = color
 	bg.add_child(fill)
 	var shine := ColorRect.new()
 	shine.position = Vector2(1, 1)
-	shine.size = Vector2(BAR_WIDTH - 2.0, 3)
+	shine.size = Vector2(width - 2.0, 3)
 	shine.color = Color(1, 1, 1, 0.13)
 	bg.add_child(shine)
 	return fill
