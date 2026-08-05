@@ -7,6 +7,7 @@ const _FRAMES := {
 	"ranger": preload("res://assets/sprites/ranger_frames.tres"),
 	"goblin": preload("res://assets/sprites/goblin_frames.tres"),
 	"skeleton": preload("res://assets/sprites/skeleton_frames.tres"),
+	"ogre": preload("res://assets/sprites/ogre_frames.tres"),
 }
 
 ## 角色对应显示缩放(与旧占位图视觉大小对齐)。
@@ -14,6 +15,7 @@ const VISUAL_SCALE := {
 	"ranger": 2.5,
 	"goblin": 2.0,
 	"skeleton": 2.5,
+	"ogre": 4.0,
 }
 
 

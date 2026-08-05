@@ -22,6 +22,12 @@ const STRIPS := {
 		"frame": Vector2i(16, 16),
 		"fps": 8.0,
 	},
+	"ogre": {
+		"idle": "res://assets/sprites/ogre_idle.png",
+		"run": "res://assets/sprites/ogre_run.png",
+		"frame": Vector2i(32, 36),
+		"fps": 8.0,
+	},
 }
 
 

@@ -3,57 +3,35 @@ extends Enemy
 ## 独眼巨魔 Boss:镇守中央房间的"深渊看守者"。
 ## 区域仇恨 —— 仅玩家进入领地(arena_rect,世界坐标矩形)才追击;玩家离开即回领地中心待机。
 ## 永不离场 —— 追击目标 clamp 到领地内,物理上无法离开中心区域。
-## 动态待机 —— 呼吸浮动 + 独眼发光脉动 + 脚下暗红粒子,常驻播放。
-
-const CYCLOPS_TEX: Texture2D = preload("res://assets/sprites/cyclops.png")
+## 动态待机 —— 呼吸浮动 + 脚下暗红粒子,常驻播放;使用 ogre 多帧动画(idle/run)。
 
 signal health_changed(current: float, max: float)
 
 ## 领地(世界坐标矩形),由 main 注入(约定:中央房间中心 400×400)
 var arena_rect := Rect2(Vector2.ZERO, Vector2(400, 400))
-## 归位点(领地中心)与视觉缩放(32→128px)
+## 归位点(领地中心)与视觉缩放(32×36 帧 4 倍 → 128×144 高大 Boss)
 var home_pos := Vector2.ZERO
 @export var visual_scale := 4.0
 @export var idle_bob_amp := 4.0
-@export var eye_glow_amp := 0.35
 
 var idle_timer := 0.0
-var eye_glow: Sprite2D
 
 
 func _ready() -> void:
+	# 覆盖 Enemy 动画角色:用 ogre 多帧素材
+	anim_character = "ogre"
+	# 确保 Visual AnimatedSprite2D 节点存在(Enemy._ready 会从此节点加载动画)
+	if not has_node("Visual"):
+		var vis := AnimatedSprite2D.new()
+		vis.name = "Visual"
+		add_child(vis)
 	super._ready()
-	_build_visual()
+	# 覆盖 Enemy 设置的 scale,用 Boss 专用放大
+	if visual_sprite != null:
+		visual_sprite.scale = Vector2.ONE * visual_scale
 	_setup_big_shadow()
 	_setup_ambient_particles()
 	hp = max_hp
-
-
-## 自建视觉:单帧独眼巨人 + 程序生成发光眼珠,"Visual" 节点名兼容 Enemy 逻辑
-func _build_visual() -> void:
-	var visual := Sprite2D.new()
-	visual.name = "Visual"
-	visual.texture = CYCLOPS_TEX
-	visual.scale = Vector2.ONE * visual_scale
-	visual.position = Vector2(0, -visual_scale * 4.0)
-	add_child(visual)
-	eye_glow = Sprite2D.new()
-	eye_glow.name = "EyeGlow"
-	eye_glow.texture = _make_glow_texture()
-	eye_glow.position = Vector2(0, -visual_scale * 4.0 - visual_scale * 6.0)
-	eye_glow.scale = Vector2.ONE * 2.5
-	eye_glow.z_index = 1
-	add_child(eye_glow)
-
-
-## 16x16 发光圆点:中心亮边透明,脉动模拟"独眼泛光"
-func _make_glow_texture() -> Texture2D:
-	var img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
-	for y in 16:
-		for x in 16:
-			var d := Vector2(x - 7.5, y - 7.5).length() / 7.5
-			img.set_pixel(x, y, Color(1.0, 0.85, 0.4, clampf(1.0 - d, 0.0, 1.0)))
-	return ImageTexture.create_from_image(img)
 
 
 ## 大号阴影(3x)
@@ -125,20 +103,23 @@ func _return_home() -> void:
 
 ## 动态待机:呼吸浮动 + 身体轻摆 + 独眼发光脉动(常驻)
 func _update_idle_effects(delta: float) -> void:
-	idle_timer += delta
-	var visual := get_node_or_null("Visual") as Sprite2D
-	if visual == null:
+	if visual_sprite == null:
 		return
+	idle_timer += delta
+	# 多帧动画:根据移动切换 idle / run;朝向左/右翻转
 	var moving := velocity.length() > 10.0
+	var target_anim := "run" if moving else "idle"
+	if visual_sprite.animation != target_anim:
+		visual_sprite.play(target_anim)
+	if absf(velocity.x) > 1.0:
+		visual_sprite.flip_h = velocity.x < 0.0
+	# 呼吸浮动(移动时幅度减半)
 	var amp := idle_bob_amp * (0.5 if moving else 1.0)
 	var bob_y := sin(idle_timer * 2.2) * amp
-	visual.position = Vector2(0, -visual_scale * 4.0 + bob_y)
-	visual.rotation = sin(idle_timer * 1.3) * 0.05
-	if eye_glow != null:
-		var pulse := 0.5 + 0.5 * sin(idle_timer * 3.0)
-		eye_glow.modulate.a = 0.5 + eye_glow_amp * pulse
-		eye_glow.scale = Vector2.ONE * (2.0 + 1.2 * pulse)
-		eye_glow.position = visual.position + Vector2(0, -visual_scale * 6.0)
+	visual_sprite.position = visual_sprite.position.lerp(
+		Vector2(0, -visual_scale * 4.0 + bob_y), 0.3)
+	visual_sprite.rotation = lerpf(visual_sprite.rotation,
+		sin(idle_timer * 1.3) * 0.05, 0.2)
 
 
 ## override:受击后 emit health_changed(供 HUD 血条)
