@@ -125,7 +125,7 @@ func _spawn_boss() -> void:
 	boss.global_position = map_gen.boss_spawn
 	add_child(boss)
 	boss.died.connect(_on_enemy_died)
-	boss.died.connect(hud.hide_boss_bar)
+	boss.died.connect(func(): hud.hide_boss_bar())
 	boss.drop_requested.connect(_on_enemy_drop_requested)
 	boss.health_changed.connect(hud.update_boss_bar)
 	hud.show_boss_bar(boss)

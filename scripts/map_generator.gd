@@ -31,7 +31,7 @@ class RoomData:
 @export var rng_seed := 0
 
 ## 中心 Boss 房常量(BOSS_ARENA_HALF=领地半宽;PLAYER_SPAWN_OFFSET=出生点相对中心偏移)
-const BOSS_ARENA_HALF := Vector2(200, 200)
+const BOSS_ARENA_HALF := Vector2(250, 250)
 const PLAYER_SPAWN_OFFSET := Vector2(0, 260)
 
 var rng := RandomNumberGenerator.new()
@@ -199,8 +199,8 @@ func _place_obstacles() -> void:
 					size = Vector2(40, 120)
 			var avoid: Array[Rect2] = obstacle_rects.duplicate()
 			if room == spawn_room:
-				# Boss 领地(中心 400×400,grow 40 留余量)+ 出生点保护
-				avoid.append(Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0).grow(40))
+				# Boss 领地(中心 500×500,grow 60 留余量)+ 出生点保护
+				avoid.append(Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0).grow(60))
 				avoid.append(Rect2(room_center + PLAYER_SPAWN_OFFSET - Vector2(120, 120), Vector2(240, 240)))
 			var p := _random_room_point(room, obstacle_margin + maxf(size.x, size.y) * 0.5, avoid)
 			_add_obstacle(p, size, type_index)
