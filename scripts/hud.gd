@@ -50,6 +50,9 @@ var debug_tick := 0.0
 var boss_bar: Control
 var boss_name_label: Label
 var boss_bar_fill: ColorRect
+## AI 向导(DeepSeek Responses API + 服务端 web_search)
+var ai_client: DeepSeekClient
+var ai_chat_panel: AiChatPanel
 
 
 func setup(p_player: Player, p_spawner: Spawner = null, p_main: Main = null) -> void:
@@ -135,6 +138,16 @@ func _build_ui() -> void:
 	_build_inventory_panel(root)
 	_build_debug_panel(root)
 	_build_boss_bar(root)
+	_build_ai_chat(root)
+
+
+func _build_ai_chat(parent: Control) -> void:
+	ai_client = DeepSeekClient.new()
+	ai_client.name = "DeepSeekClient"
+	add_child(ai_client)
+	ai_chat_panel = AiChatPanel.new()
+	ai_chat_panel.client = ai_client
+	parent.add_child(ai_chat_panel)
 
 
 ## 顶部 Boss 血条(默认隐藏,Boss 出场显示,受击实时刷新,死亡隐藏)

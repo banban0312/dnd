@@ -16,6 +16,7 @@
 - **战斗反馈**:伤害飘字、敌人死亡白闪淡出动画、箭矢拖尾粒子、受击闪白
 - **音效**:程序化合成音效(射箭/命中/受击/格挡/闪避/升级/开箱/拾取/死亡,无需外部素材)
 - **中心 Boss·独眼巨魔**:镇守中央房间;仅进入中央区域引发仇恨,**永不离场**;自带动态待机(呼吸浮动/独眼发光/暗影粒子),顶部 Boss 血条,死亡固定掉落药水
+- **AI 向导**:按 J 打开聊天面板,接入 DeepSeek Responses API(`deepseek-v4-flash` + 服务端 `web_search` 联网搜索)
 
 ## 操作
 
@@ -31,8 +32,30 @@
 | 1 / 2 / 3 | 使用快捷栏药水 |
 | I | 背包与装备面板 |
 | K | 技能面板(分配技能点) |
+| J | AI 向导聊天(DeepSeek 联网搜索) |
 | T | 测试工具:刷怪 开/关 |
 | R | 重新开始 |
+
+## AI 向导(DeepSeek 联网搜索)
+
+按 `J` 打开/关闭"冒险向导"聊天面板(打开时游戏暂停),输入问题回车发送。模型为
+`deepseek-v4-flash`,通过 DeepSeek Responses API 调用,**联网搜索由服务端执行**
+(`tools: [{type: "web_search"}]`),无需自己接第三方搜索 API。
+
+首次使用需要配置 API Key(二选一):
+
+- 面板内配置:打开聊天面板,在底部"API Key"输入框粘贴
+  [DeepSeek API Key](https://platform.deepseek.com/api_keys),点"保存配置"
+- 环境变量:设置 `DEEPSEEK_API_KEY` 后启动游戏(环境变量优先级更高)
+
+Key / 模型保存在本机 `user://ai_config.cfg`,**不会写入项目目录或提交到仓库**。
+模型名可在面板"模型"输入框修改(Responses API 目前仅支持 `deepseek-v4-flash`)。
+
+命令行冒烟测试(需先设置 `DEEPSEEK_API_KEY`):
+
+```powershell
+& "D:\Godot\Godot_v4.7.1-stable_win64_console.exe" --headless --path . --script res://tools/test_deepseek.gd -- "搜索今天最新的 3 条重要 AI 新闻,并标注时间和出处"
+```
 
 ## 测试工具
 
@@ -78,6 +101,8 @@ scripts/chest.gd       宝箱:概率掉落与经验(信号上抛)
 scripts/save_point.gd  存档点(信号上抛)
 scripts/potion_pickup.gd 掉落药水拾取
 scripts/hud.gd         HUD:血/蓝/经验条、快捷栏、装备、技能面板、测试工具(含手动存档)
+scripts/deepseek_client.gd DeepSeek Responses API 客户端(服务端 web_search,多轮对话)
+scripts/ai_chat_panel.gd AI 向导聊天面板(程序化 UI,暂停游戏)
 scripts/main.gd        主场景逻辑:重生、掉落生成、经验结算、启动菜单、存档
 scripts/save_manager.gd 本地存档读写(ConfigFile)
 scripts/sound_factory.gd 程序化音效合成
