@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b18mpytdmuqko"
-path="res://.godot/imported/ivoryred_armor_sheet.png-40fa13560f751b557f193b257fba2b50.ctex"
+uid="uid://bwx76pkbafulq"
+path="res://.godot/imported/icon_bow.png-b058e7da4c5b4b9ff68f52c37490d0cc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/ivoryred_armor_sheet.png"
-dest_files=["res://.godot/imported/ivoryred_armor_sheet.png-40fa13560f751b557f193b257fba2b50.ctex"]
+source_file="res://assets/sprites/icon_bow.png"
+dest_files=["res://.godot/imported/icon_bow.png-b058e7da4c5b4b9ff68f52c37490d0cc.ctex"]
 
 [params]
 

@@ -199,8 +199,8 @@ func _place_obstacles() -> void:
 					size = Vector2(40, 120)
 			var avoid: Array[Rect2] = obstacle_rects.duplicate()
 			if room == spawn_room:
-				# Boss 领地(中心 500×500,grow 60 留余量)+ 出生点保护
-				avoid.append(Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0).grow(60))
+				# Boss 领地(中心 500×500,grow 120 留充足余量)+ 出生点保护
+				avoid.append(Rect2(room_center - BOSS_ARENA_HALF, BOSS_ARENA_HALF * 2.0).grow(120))
 				avoid.append(Rect2(room_center + PLAYER_SPAWN_OFFSET - Vector2(120, 120), Vector2(240, 240)))
 			var p := _random_room_point(room, obstacle_margin + maxf(size.x, size.y) * 0.5, avoid)
 			_add_obstacle(p, size, type_index)

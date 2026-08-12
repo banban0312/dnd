@@ -20,3 +20,6 @@
 # 临时调试目录
 /_debug_backup/
 /_test/
+/.godot_bak2/
+/_test_parse.gd
+/_test_parse.gd.uid
