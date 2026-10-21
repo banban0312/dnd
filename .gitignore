@@ -23,3 +23,11 @@
 /.godot_bak2/
 /_test_parse.gd
 /_test_parse.gd.uid
+
+# Versioned player packages live locally; commit their manifest and release notes.
+/releases/**/*.zip
+/releases/**/*.exe
+/releases/**/*.pck
+/build/**/*.exe
+/build/**/*.pck
+/build/**/*.zip

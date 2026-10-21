@@ -10,6 +10,14 @@ var exit_position := Vector2(2208, 420)
 var map_size := Vector2(2400, 840)
 var rooms: Array[Rect2] = []
 var depth := 1
+var room_names: Array[String] = []
+var enemy_rooms: Array[int] = []
+var enemy_roles: Array[String] = []
+var hazard_positions: Array[Vector2] = []
+var route_points: Array[Vector2] = []
+var well_rect := Rect2()
+var boss_gate_rect := Rect2()
+var _walkable: Dictionary = {}
 var _seed := 1
 var _floors: Array[Rect2] = []
 var _walls: Array[Rect2] = []
@@ -17,6 +25,7 @@ var _pillars: Array[Vector2] = []
 var _stones: Array[Dictionary] = []
 var _scratches: Array[PackedVector2Array] = []
 var _lights: Array[Vector2] = []
+var _cover_blocks: Array[Rect2] = []
 
 const FLOOR_TEXTURE = preload("res://assets/sprites/floor.png")
 const WALL_TEXTURE = preload("res://assets/sprites/wall.png")
@@ -29,6 +38,7 @@ const BONE := Color("c3bca7")
 
 class Flame extends Node2D:
 	var cool := false
+	var spectral := false
 	var phase := 0.0
 	var tick := 0.0
 
@@ -40,7 +50,7 @@ class Flame extends Node2D:
 			queue_redraw()
 
 	func _draw() -> void:
-		var hue := Color("7bc4b6") if cool else Color("edb963")
+		var hue := Color("c7a3f1") if spectral else (Color("7bc4b6") if cool else Color("edb963"))
 		var pulse := 1.0 + sin(phase * 4.7 + position.x) * 0.05
 		for i in range(8, 0, -1):
 			var radius := float(i) * 11.0 * pulse
@@ -65,46 +75,126 @@ func build(p_depth: int, seed_value: int = 1) -> void:
 	depth = p_depth
 	_seed = seed_value
 	z_index = -20
-	rooms.assign([
-		Rect2(96, 120, 640, 600),
-		Rect2(832, 88, 704, 664),
-		Rect2(1632, 120, 672, 600),
-	])
-	_floors.assign(rooms)
-	_floors.append(Rect2(720, 350, 128, 140))
-	_floors.append(Rect2(1520, 350, 128, 140))
-	for i in rooms.size():
-		var room: Rect2 = rooms[i]
-		_wall(Rect2(room.position - Vector2(24, 30), Vector2(room.size.x + 48, 30)))
-		_wall(Rect2(Vector2(room.position.x - 24, room.end.y), Vector2(room.size.x + 48, 30)))
-		_side_wall(room.position.x - 24, room.position.y, room.end.y, i > 0)
-		_side_wall(room.end.x, room.position.y, room.end.y, i < 2)
-	for corridor in [Rect2(736, 326, 96, 24), Rect2(736, 490, 96, 24), Rect2(1536, 326, 96, 24), Rect2(1536, 490, 96, 24)]:
-		_wall(corridor)
-	_pillars.assign([Vector2(560, 230), Vector2(560, 610), Vector2(1048, 240), Vector2(1320, 600), Vector2(1768, 230), Vector2(2180, 610)])
+	if depth == 1:
+		map_size = Vector2(2528, 1440)
+		rooms.assign([Rect2(96, 256, 576, 512), Rect2(832, 256, 640, 512), Rect2(1664, 256, 736, 608), Rect2(960, 960, 512, 352)])
+		room_names.assign(["入口补给庭", "断旗交战厅", "绞盘守卫厅", "封印侧室 · 可选"])
+		_floors.assign(rooms)
+		# Two entrances into the central courtyard allow a flank against its archers.
+		_floors.append_array([Rect2(640, 320, 224, 160), Rect2(640, 608, 224, 128), Rect2(1440, 416, 256, 192), Rect2(1152, 736, 192, 256), Rect2(1440, 1088, 160, 160), Rect2(1472, 544, 160, 704)])
+		_cover_blocks.assign([Rect2(1088, 416, 128, 192)])
+		player_spawn = Vector2(288, 512)
+		boss_position = Vector2(2048, 480)
+		exit_position = Vector2(2288, 768)
+		chest_positions.assign([Vector2(544, 416), Vector2(1216, 1184)])
+		enemy_positions.assign([Vector2(1008, 416), Vector2(1264, 656), Vector2(1376, 384), Vector2(1824, 704), Vector2(2208, 592), Vector2(1072, 1072), Vector2(1328, 1184), Vector2(1360, 1040)])
+		enemy_rooms.assign([1, 1, 1, 2, 2, 3, 3, 3])
+		enemy_roles.assign(["melee", "charger", "ranged", "charger", "ranged", "melee", "ranged", "charger"])
+		_pillars.assign([Vector2(960, 320), Vector2(1376, 704)])
+		_lights.assign([Vector2(160, 320), Vector2(608, 704), Vector2(896, 320), Vector2(1408, 704), Vector2(1728, 320), Vector2(2336, 800), Vector2(1024, 1248)])
+		# Both paths merge west of one gate; the four-ward arena has no obstacles.
+		well_rect = Rect2(1888, 1024, 224, 160)
+		boss_gate_rect = Rect2(1632, 416, 32, 192)
+		route_points.assign([player_spawn, Vector2(576, 400), Vector2(752, 400), Vector2(992, 352), Vector2(1280, 352), Vector2(1376, 512), Vector2(1568, 512), boss_position, Vector2(2048, 768), exit_position])
+	elif depth == 2:
+		map_size = Vector2(2528, 1600)
+		rooms.assign([Rect2(96, 96, 576, 448), Rect2(832, 96, 704, 512), Rect2(1536, 864, 864, 608), Rect2(288, 736, 576, 448)])
+		room_names.assign(["落井平台", "断桥外廊", "井环圣所", "遗骨祈祷室 · 可选"])
+		_floors.assign(rooms)
+		# The upper gallery and lower reward route reconnect on the west of the sanctuary.
+		# The lower walkway wraps BELOW the shaft instead of drawing floor across it.
+		_floors.append_array([Rect2(640, 256, 224, 192), Rect2(1280, 576, 192, 800), Rect2(1408, 864, 160, 192), Rect2(448, 512, 192, 256), Rect2(704, 1152, 160, 224), Rect2(832, 1216, 480, 160)])
+		_cover_blocks.assign([Rect2(1056, 96, 96, 224), Rect2(1248, 416, 96, 192), Rect2(544, 864, 96, 128)])
+		player_spawn = Vector2(288, 320)
+		boss_position = Vector2(2016, 1152)
+		exit_position = Vector2(2256, 1408)
+		chest_positions.assign([Vector2(544, 224), Vector2(544, 1056)])
+		enemy_positions.assign([Vector2(960, 256), Vector2(1184, 448), Vector2(1408, 224), Vector2(416, 832), Vector2(416, 1056), Vector2(736, 1024), Vector2(1728, 1024), Vector2(2224, 1328)])
+		enemy_rooms.assign([1, 1, 1, 3, 3, 3, 2, 2])
+		enemy_roles.assign(["ranged", "melee", "ranged", "charger", "melee", "charger", "ranged", "melee"])
+		_pillars.assign([Vector2(928, 160), Vector2(1440, 544)])
+		_lights.assign([Vector2(160, 160), Vector2(608, 480), Vector2(896, 160), Vector2(1472, 544), Vector2(352, 1120), Vector2(1600, 928), Vector2(2336, 1408)])
+		well_rect = Rect2(960, 768, 224, 416)
+		boss_gate_rect = Rect2(1504, 864, 32, 192)
+		hazard_positions.assign([Vector2(1120, 352), Vector2(1840, 1328)])
+		route_points.assign([player_spawn, Vector2(752, 352), Vector2(992, 352), Vector2(1184, 352), Vector2(1376, 352), Vector2(1376, 960), Vector2(1632, 960), boss_position])
+	else:
+		# An ascent through a split ossuary contrasts with the first two horizontal runs.
+		map_size = Vector2(2816, 1856)
+		rooms.assign([Rect2(96, 992, 576, 512), Rect2(832, 736, 736, 640), Rect2(1792, 192, 896, 768), Rect2(960, 1536, 576, 256)])
+		room_names.assign(["余烬升降台", "白骨回庭", "缚星王座", "失名者骨库 · 可选"])
+		_floors.assign(rooms)
+		_floors.append_array([Rect2(640, 1152, 224, 192), Rect2(1536, 768, 288, 192), Rect2(1280, 1344, 192, 224), Rect2(768, 1600, 224, 128), Rect2(768, 1280, 160, 448)])
+		_cover_blocks.assign([Rect2(960, 736, 96, 192), Rect2(1376, 1152, 96, 224)])
+		player_spawn = Vector2(288, 1248)
+		boss_position = Vector2(2240, 576)
+		exit_position = Vector2(2560, 320)
+		chest_positions.assign([Vector2(544, 1120), Vector2(1216, 1664)])
+		enemy_positions.assign([Vector2(960, 1088), Vector2(1408, 896), Vector2(1200, 800), Vector2(1056, 1664), Vector2(1408, 1664), Vector2(1296, 1736), Vector2(1936, 768), Vector2(2496, 736)])
+		enemy_rooms.assign([1, 1, 1, 3, 3, 3, 2, 2])
+		enemy_roles.assign(["shieldbearer", "bone_weaver", "wisp", "shieldbearer", "wisp", "charger", "bone_weaver", "wisp"])
+		_pillars.assign([Vector2(896, 800), Vector2(1504, 1312)])
+		_lights.assign([Vector2(160, 1056), Vector2(608, 1440), Vector2(896, 1312), Vector2(1504, 800), Vector2(1024, 1728), Vector2(1856, 256), Vector2(2624, 896)])
+		well_rect = Rect2(1120, 928, 160, 224)
+		boss_gate_rect = Rect2(1760, 768, 32, 192)
+		hazard_positions.assign([Vector2(1280, 1248), Vector2(2400, 800)])
+		route_points.assign([player_spawn, Vector2(752, 1248), Vector2(1024, 1248), Vector2(1312, 1248), Vector2(1312, 1024), Vector2(1440, 864), Vector2(1696, 864), Vector2(1856, 864), boss_position, exit_position])
+	# A union of snapped floor cells generates both visible walls and collision.
+	# Doorways and optional loops therefore cannot disagree with the floor art.
+	_build_boundaries()
+	_collision(well_rect)
+	for cover in _cover_blocks:
+		_wall(cover)
 	for p in _pillars:
 		_collision(Rect2(p - Vector2(22, 19), Vector2(44, 38)))
-	enemy_positions.assign([
-		Vector2(1000, 390), Vector2(1210, 300), Vector2(1380, 415), Vector2(1150, 580),
-		Vector2(1775, 350), Vector2(1760, 570), Vector2(2120, 270), Vector2(2180, 520),
-	])
-	chest_positions.assign([Vector2(610, 290), Vector2(1310, 240)])
-	_lights.assign([Vector2(168, 194), Vector2(650, 628), Vector2(906, 168), Vector2(1462, 664), Vector2(1706, 196), Vector2(2228, 206), Vector2(1710, 638)])
 	for p in _lights:
 		var flame := Flame.new()
 		flame.position = p
 		flame.cool = depth > 1 and int(p.x) % 3 != 0
+		flame.spectral = depth == 3
 		add_child(flame)
 	_prepare_surface()
+	for i in rooms.size():
+		var label := Label.new()
+		label.text = room_names[i]
+		label.position = rooms[i].position + Vector2(40, 112)
+		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_color_override("font_color", Color("b6a17c") if depth == 1 else Color("8ba9ad"))
+		label.add_theme_constant_override("outline_size", 5)
+		label.add_theme_color_override("font_outline_color", INK)
+		add_child(label)
 	queue_redraw()
 
 
-func _side_wall(x: float, top: float, bottom: float, doorway: bool) -> void:
-	if doorway:
-		_wall(Rect2(x, top, 24, 350 - top))
-		_wall(Rect2(x, 490, 24, bottom - 490))
-	else:
-		_wall(Rect2(x, top, 24, bottom - top))
+func _build_boundaries() -> void:
+	for rect in _floors:
+		for y in range(int(rect.position.y / 32), int(rect.end.y / 32)):
+			for x in range(int(rect.position.x / 32), int(rect.end.x / 32)):
+				var center := Vector2(x * 32 + 16, y * 32 + 16)
+				var blocked := well_rect.has_point(center)
+				for cover in _cover_blocks:
+					blocked = blocked or cover.has_point(center)
+				if not blocked:
+					_walkable[Vector2i(x, y)] = true
+	var boundary: Dictionary = {}
+	for cell: Vector2i in _walkable:
+		for offset in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var neighbor: Vector2i = cell + offset
+			if not _walkable.has(neighbor):
+				boundary[neighbor] = true
+	for cell: Vector2i in boundary:
+		_wall(Rect2(Vector2(cell) * 32, Vector2(32, 32)))
+
+
+func room_at(point: Vector2) -> int:
+	for i in rooms.size():
+		if rooms[i].has_point(point):
+			return i
+	return -1
+
+
+func is_walkable(point: Vector2) -> bool:
+	return _walkable.has(Vector2i(floori(point.x / 32), floori(point.y / 32)))
 
 
 func _wall(rect: Rect2) -> void:
@@ -136,7 +226,7 @@ func _prepare_surface() -> void:
 			while x < floor_rect.end.x:
 				var width := minf(64.0, floor_rect.end.x - x)
 				var height := minf(64.0, floor_rect.end.y - y)
-				var tint := Color("303640") if depth == 1 else Color("29363b")
+				var tint := Color("342e40") if depth == 3 else (Color("303640") if depth == 1 else Color("29363b"))
 				tint = tint.lightened(random.randf_range(-0.055, 0.045))
 				_stones.append({"rect": Rect2(x + 1, y + 1, width - 2, height - 2), "color": tint, "scar": random.randf() < 0.075})
 				x += 64
@@ -157,8 +247,8 @@ func _draw() -> void:
 	for stone in _stones:
 		var rect: Rect2 = stone.rect
 		var tint: Color = stone.color
-		draw_texture_rect(FLOOR_TEXTURE, rect, false, Color("c8bbaa") if depth == 1 else Color("9fbbb6"))
-		draw_rect(rect, Color(tint, 0.18))
+		draw_texture_rect(FLOOR_TEXTURE, rect, false, Color("bdb0cc") if depth == 3 else (Color("c8bbaa") if depth == 1 else Color("9fbbb6")))
+		draw_rect(rect, Color(tint, 0.68))
 		draw_line(rect.position, rect.position + Vector2(rect.size.x, 0), tint.lightened(0.045), 1)
 		if stone.scar:
 			draw_line(rect.position + Vector2(8, 8), rect.position + Vector2(15, 8), tint.darkened(0.19), 2)
@@ -168,15 +258,11 @@ func _draw() -> void:
 		draw_rect(Rect2(room.position + Vector2(32, 32), room.size - Vector2(64, 64)), Color("363c42"), false, 1)
 		for corner in [room.position + Vector2(24, 24), Vector2(room.end.x - 24, room.position.y + 24), room.end - Vector2(24, 24), Vector2(room.position.x + 24, room.end.y - 24)]:
 			_diamond(corner, 5, Color("77664b") if depth == 1 else Color("5d7871"))
-	for x in [736, 832, 1536, 1632]:
-		for offset in [-57, 57]:
-			draw_rect(Rect2(x - 6, 420 + offset, 12, 3), Color("957b51"))
-		for i in range(5):
-			draw_rect(Rect2(x - 4, 363 + i * 24, 8, 18), Color("464750"))
 	_heraldry()
+	_draw_tactical_marks()
 	# Chamber floor seals are restrained, so arrows and enemies retain contrast.
-	_seal(Vector2(350, 420), 92, Color("776747"), false)
-	_seal(Vector2(1184, 420), 108, Color("49525a"), false)
+	_seal(player_spawn + Vector2(64, 0), 72, Color("776747"), false)
+	_seal(rooms[1].get_center(), 92, Color("49525a"), false)
 	_seal(boss_position, 154, Color("775044") if depth == 1 else Color("81504f"), true)
 	for scratch in _scratches:
 		draw_polyline(scratch, Color("222832") if depth == 1 else Color("674345"), 1)
@@ -188,16 +274,57 @@ func _draw() -> void:
 	for p in _pillars:
 		_pillar(p)
 	_entrance()
+	_draw_well()
 	_exit_arch()
 	# Bones/debris stay along edges, never in a doorway or under combatants.
-	for p in [Vector2(430, 665), Vector2(935, 665), Vector2(1450, 270), Vector2(1830, 640), Vector2(2240, 320)]:
-		_debris(p)
+	for room in rooms:
+		_debris(room.end - Vector2(90, 55))
 	# Gentle edge occlusion gives the chambers volume while leaving the center readable.
 	for room in rooms:
 		for i in range(5):
 			var alpha := 0.025 * float(5 - i)
 			draw_rect(Rect2(room.position + Vector2(0, i * 5), Vector2(room.size.x, 5)), Color(0, 0, 0, alpha))
 			draw_rect(Rect2(room.position + Vector2(i * 5, 0), Vector2(5, room.size.y)), Color(0, 0, 0, alpha * 0.7))
+
+
+func _draw_tactical_marks() -> void:
+	# Small repeated inlays mark route choices without covering combat telegraphs.
+	var paths: Array[PackedVector2Array] = []
+	if depth == 1:
+		paths.append(PackedVector2Array([Vector2(560, 432), Vector2(752, 400), Vector2(960, 400)]))
+		paths.append(PackedVector2Array([Vector2(560, 656), Vector2(752, 672), Vector2(960, 672)]))
+		paths.append(PackedVector2Array([Vector2(1248, 800), Vector2(1248, 928)]))
+		paths.append(PackedVector2Array([Vector2(1504, 1168), Vector2(1552, 1168), Vector2(1552, 656)]))
+	elif depth == 2:
+		paths.append(PackedVector2Array([Vector2(688, 352), Vector2(800, 352)]))
+		paths.append(PackedVector2Array([Vector2(544, 576), Vector2(544, 688)]))
+		paths.append(PackedVector2Array([Vector2(784, 1200), Vector2(784, 1296), Vector2(1376, 1296), Vector2(1376, 1104)]))
+	else:
+		paths.append(PackedVector2Array([Vector2(688, 1248), Vector2(1024, 1248), Vector2(1312, 1248), Vector2(1312, 896), Vector2(1696, 864)]))
+		paths.append(PackedVector2Array([Vector2(1376, 1424), Vector2(1376, 1504)]))
+		paths.append(PackedVector2Array([Vector2(928, 1664), Vector2(848, 1664), Vector2(848, 1408)]))
+		# Rib-like ivory inlays frame the court while keeping its two traversal arcs clear.
+		for y in range(800, 1344, 64):
+			for x in [864, 1536]:
+				draw_line(Vector2(x, y), Vector2(x + (18 if x == 864 else -18), y - 14), Color("9b929a", 0.65), 3)
+		_seal(boss_position, 240, Color("9279ac"), true)
+		_seal(boss_position, 204, Color("72668b"), false)
+	for path in paths:
+		for segment in range(path.size() - 1):
+			var start: Vector2 = path[segment]
+			var finish: Vector2 = path[segment + 1]
+			var distance := start.distance_to(finish)
+			var direction := start.direction_to(finish)
+			for step in range(0, int(distance), 40):
+				var p := start + direction * float(step)
+				_diamond(p, 3, Color("a390bb") if depth == 3 else (Color("9a8055") if depth == 1 else Color("5c9291")))
+	# The large empty sanctuary floor is a deliberate four-column combat arena.
+	if depth == 1:
+		for offset in [Vector2(-240, -128), Vector2(240, -128), Vector2(-240, 128), Vector2(240, 128)]:
+			_seal(rooms[2].get_center() + offset, 36, Color("617c7b"), false)
+	if depth > 1:
+		for i in range(3):
+			draw_rect(well_rect.grow(22 + i * 7), Color("527774", 0.35 - i * 0.08), false, 2)
 
 
 func _masonry(rect: Rect2) -> void:
@@ -251,12 +378,35 @@ func _diamond(center: Vector2, radius: float, tint: Color) -> void:
 
 
 func _entrance() -> void:
-	var origin := Vector2(144, 420)
+	var origin := player_spawn - Vector2(144, 0)
 	for i in range(6):
 		draw_rect(Rect2(origin + Vector2(i * 14, -45), Vector2(12, 90)), Color("242b34").lightened(float(i) * 0.018))
 		draw_line(origin + Vector2(i * 14 + 1, -45), origin + Vector2(i * 14 + 1, 45), Color("58606b"), 2)
 	for y in [-58, 55]:
 		draw_rect(Rect2(origin + Vector2(-4, y), Vector2(98, 3)), Color("776344"))
+
+
+func _draw_well() -> void:
+	# Layered stone and receding chain make the shaft part of the playable world.
+	var rim := well_rect.grow(16)
+	draw_rect(rim, Color("0c1016"))
+	for i in range(5):
+		var inset := float(i) * 9.0
+		var band := Rect2(well_rect.position + Vector2(inset, inset), well_rect.size - Vector2(inset * 2, inset * 2))
+		if band.size.y <= 0:
+			break
+		draw_texture_rect(WALL_TEXTURE, band, true, Color("676655").darkened(float(i) * 0.14))
+		draw_rect(band.grow(-5), Color("0b131c").lightened(float(4 - i) * 0.012))
+	for x in [rim.position.x, rim.end.x - 16]:
+		draw_texture_rect(WALL_TEXTURE, Rect2(x, rim.position.y, 16, rim.size.y), true, Color("9d937f"))
+	for y in [rim.position.y, rim.end.y - 16]:
+		draw_texture_rect(WALL_TEXTURE, Rect2(rim.position.x, y, rim.size.x, 16), true, Color("9d937f"))
+	var center := well_rect.get_center()
+	for x in [center.x - 46, center.x + 46]:
+		for y in range(int(well_rect.position.y) + 8, int(well_rect.end.y) - 8, 12):
+			draw_rect(Rect2(x, y, 5, 9), Color("7d827c").darkened(float(y - well_rect.position.y) / maxf(1, well_rect.size.y) * 0.7), false, 1)
+	draw_line(Vector2(center.x - 72, rim.position.y - 5), Vector2(center.x + 72, rim.position.y - 5), Color("6e6251"), 7)
+	draw_arc(Vector2(center.x, rim.position.y - 5), 19, 0, TAU, 20, GOLD.darkened(0.35), 4)
 
 
 func _exit_arch() -> void:
@@ -284,7 +434,8 @@ func _debris(p: Vector2) -> void:
 
 func _heraldry() -> void:
 	# The old kingdom's processional carpets stop before each combat seal.
-	for origin in [Vector2(255, 350), Vector2(860, 350), Vector2(1658, 350)]:
+	for i in range(3):
+		var origin: Vector2 = rooms[i].get_center() - Vector2(100, 70)
 		draw_rect(Rect2(origin, Vector2(200, 140)), Color("49272c") if depth == 1 else Color("303b49"))
 		# Regular two-pixel stitches and irregular worn threads give cloth its own material.
 		for yy in range(4, 138, 4):

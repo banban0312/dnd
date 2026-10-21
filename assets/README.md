@@ -64,3 +64,7 @@
 
 `pixel_title.png`: generated for this project with OpenAI image generation; medieval castle, dragon and cloaked knight. Rendered unfiltered in `scripts/mvp_title_art.gd`. It is a background illustration, not a gameplay screenshot or a third-party tileset.
 Gameplay stonework, pillar and chest textures reuse the existing Dungeon Crawl assets above.
+
+## Original soundtrack (2026-10-21)
+
+`audio/exploration_medieval.wav` and `audio/boss_electronic.wav`: original procedural compositions created for this project, synthesized by `tools/generate_music.py`. See `audio/README.md` for composition, reproduction and licensing details. No third-party recordings or sampled songs.

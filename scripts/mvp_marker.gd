@@ -34,16 +34,13 @@ func _draw() -> void:
 			var pulse := 0.4 + sin(time * 2.0) * 0.12
 			draw_circle(Vector2(0, -31), 3, Color(0.92, 0.70, 0.31, pulse))
 	else:
-		draw_rect(Rect2(-50, -40, 100, 88), Color("0b1017"))
-		draw_rect(Rect2(-50, -40, 100, 88), Color("454b53"), false, 5)
-		for y in range(-26, 43, 14):
-			draw_line(Vector2(-40, y), Vector2(40, y), Color("303843"), 3)
 		var tint := Color("d6aa61") if unlocked else Color("65707d")
-		draw_arc(Vector2.ZERO, 64, 0, TAU, 48, Color(tint, 0.3), 1.5)
 		for x in [-58, 58]:
 			draw_rect(Rect2(x - 5, -45, 10, 12), tint)
 		if unlocked:
-			draw_circle(Vector2(0, -26 + sin(time) * 4), 4, Color("edcc89"))
+			var offset := Vector2(0, -18 + sin(time * 2) * 3)
+			draw_line(offset - Vector2(0, 14), offset + Vector2(0, 8), tint, 3)
+			draw_polyline(PackedVector2Array([offset + Vector2(-8, 1), offset + Vector2(0, 9), offset + Vector2(8, 1)]), tint, 3)
 
 func draw_ellipse_shadow() -> void:
 	draw_set_transform(Vector2(0, 19), 0, Vector2(1.5, 0.45))

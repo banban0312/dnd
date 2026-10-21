@@ -87,6 +87,11 @@ func _physics_process(delta: float) -> void:
 
 
 func _hit_enemy(enemy: Enemy) -> bool:
+	# Even an invulnerable target notices an incoming player attack.
+	if enemy.has_method("acquire_aggro"):
+		enemy.call("acquire_aggro")
+	if enemy.has_method("can_be_shot") and not enemy.call("can_be_shot"):
+		return false
 	var target_id := enemy.get_instance_id()
 	if hit_targets.has(target_id):
 		return true

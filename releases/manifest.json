@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-21",
+  "releases": [
+    {
+      "version": "v0.4",
+      "status": "archived",
+      "platform": "windows-x86_64",
+      "path": "releases/v0.4/deeper-and-deeper-windows-v0.4.zip",
+      "size_bytes": 41482789,
+      "sha256": "35e9a8e2d5ff8f88727041ca90c2167fc3f191491257c3c2618badbd3fed46a7",
+      "notes": "历史双层试玩版本。由已有 0.4 ZIP 复制归档，保留原包。"
+    },
+    {
+      "version": "v0.5",
+      "status": "archived",
+      "platform": "windows-x86_64",
+      "path": "releases/v0.5/deeper-and-deeper-windows-v0.5.zip",
+      "size_bytes": 40319739,
+      "sha256": "9eaef14471ef397a67702556eff07437c49ac756431ebfd522dd8befc3adbeec",
+      "notes": "J/K/L 操作、鼠标瞄准；双层，四柱 Boss 在第二层。由已有 0.5 ZIP 复制归档，保留原包。"
+    },
+    {
+      "version": "v0.6",
+      "status": "built",
+      "platform": "windows-x86_64",
+      "path": "releases/v0.6/deeper-and-deeper-windows-v0.6.zip",
+      "size_bytes": 46151669,
+      "sha256": "2db2bea2e2db17503d53dfa280272b1f330e69528ece61037ba98f4e5dd5eae3",
+      "notes": "三层；第一层四柱守望者、第三层骷髅法师/二次骨莲/四秒保护罩；WASD八向瞄准、JKL战斗、原创中世纪与电子Boss双配乐。12组回归及本机原生解压流程通过，真人平衡与新机器待验证。"
+    }
+  ]
+}

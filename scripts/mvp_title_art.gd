@@ -5,10 +5,8 @@ var background: Texture2D
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Direct image loading also supports first launch before editor import.
-	var source := Image.load_from_file("res://assets/pixel_title.png")
-	if source != null:
-		background = ImageTexture.create_from_image(source)
+	# Imported textures are remapped into the exported PCK by Godot.
+	background = load("res://assets/pixel_title.png") as Texture2D
 
 func _process(delta: float) -> void:
 	clock += delta

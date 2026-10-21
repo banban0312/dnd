@@ -1,6 +1,6 @@
 extends CharacterBody2D
 class_name Player
-## 玩家角色:游侠。移动、翻滚闪避、弓箭射击、Q 三连发、E 拉弓加速、快捷栏与装备。
+## 玩家角色:游侠。WASD移动、空格翻滚、J普攻、K连射、L疾射、快捷栏与装备。
 
 signal stats_changed
 signal inventory_changed
@@ -22,6 +22,9 @@ const QUICKBAR_SIZE := 3
 @export var dodge_duration: float = 0.2
 @export var dodge_cooldown: float = 1.0
 @export var dodge_iframes: float = 0.4
+## Opt-in for the new MVP; legacy scenes retain their original block rules.
+@export var mvp_block_tradeoff := false
+var reduced_flash := false
 
 ## 技能常量(可调)
 const TRIPLE_MP_COST := 15.0
@@ -106,7 +109,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var move_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	blocking = Input.is_action_pressed("block")
+	blocking = Input.is_action_pressed("block") and (not mvp_block_tradeoff or dodge_timer <= 0.0)
 
 	if dodge_timer > 0.0:
 		velocity = dodge_dir * dodge_speed
@@ -116,6 +119,7 @@ func _physics_process(delta: float) -> void:
 			facing = move_dir
 	_update_facing(move_dir)
 
+	# The attack action is held: J or left mouse repeats after the firing cooldown.
 	if Input.is_action_pressed("attack"):
 		_try_shoot()
 	if Input.is_action_just_pressed("skill_1"):
@@ -133,10 +137,11 @@ func _physics_process(delta: float) -> void:
 		if burst_timer <= 0.0:
 			_fire_arrow()
 			burst_remaining -= 1
-			burst_timer = TRIPLE_BURST_GAP
+			burst_timer = _burst_gap()
 
 	move_and_slide()
 	_update_visual_effects(delta)
+	queue_redraw()
 
 
 func _tick_timers(delta: float) -> void:
@@ -155,10 +160,10 @@ func _tick_timers(delta: float) -> void:
 
 
 func _current_speed() -> float:
-	return base_speed + gear_move_speed_bonus
+	return (base_speed + gear_move_speed_bonus) * (0.75 if mvp_block_tradeoff and blocking else 1.0)
 
 
-## ---- 射击(左键,弓) ----
+## ---- 射击(J / 左键按住连发,弓) ----
 func _try_shoot() -> void:
 	if dead or (attack_cd > 0.0 and not debug_no_cd):
 		return
@@ -184,18 +189,21 @@ func set_debug_cheats(enabled: bool) -> void:
 
 func _current_attack_interval() -> float:
 	var base := attack_interval * gear_attack_speed_mod
+	if mvp_block_tradeoff and blocking:
+		base *= 1.35
 	if draw_speed_timer > 0.0:
 		var factor: float = maxf(0.25, DRAW_SPEED_FACTOR - 0.05 * float(skill_levels.draw - 1))
 		return base * factor
 	return base
 
 
+func _burst_gap() -> float:
+	return TRIPLE_BURST_GAP * (1.35 if mvp_block_tradeoff and blocking else 1.0)
+
+
 func _fire_arrow() -> void:
-	var aim := get_global_mouse_position() - global_position
-	if aim.length() <= 0.01:
-		aim = facing
-	else:
-		facing = aim.normalized()
+	# Keyboard movement selects one of eight directions; retain it while stationary.
+	facing = facing.normalized() if not facing.is_zero_approx() else Vector2.RIGHT
 	recoil_timer = RECOIL_TIME
 	Sfx.play(SoundFactory.shoot(), -4.0)
 	var arrow := Arrow.new()
@@ -214,14 +222,19 @@ func _setup_shadow() -> void:
 	add_child(shadow)
 
 
-func _update_facing(move_dir: Vector2) -> void:
+func _update_facing(_move_dir: Vector2) -> void:
 	if visual_sprite == null:
 		return
-	var dir_x := move_dir.x
-	if absf(dir_x) < 0.01:
-		dir_x = get_global_mouse_position().x - global_position.x
+	var dir_x := facing.x
 	if absf(dir_x) > 0.05:
 		visual_sprite.flip_h = dir_x < 0.0
+
+func _draw() -> void:
+	if dead:
+		return
+	var tip := facing * 35.0
+	var side := facing.orthogonal() * 5.0
+	draw_colored_polygon(PackedVector2Array([tip + facing * 5, tip - facing * 4 + side, tip - facing * 4 - side]), Color("d6ad68"))
 
 
 func _update_visual_effects(delta: float) -> void:
@@ -325,7 +338,7 @@ func _recalc_stats() -> void:
 	gear_crit_chance = clampf(gear_crit_chance, 0.0, 0.8)
 
 
-## ---- Q 技能:三连发 ----
+## ---- K 技能:三连发 ----
 func _try_triple_shot() -> void:
 	if dead or (skill_cd > 0.0 and not debug_no_cd):
 		if skill_cd > 0.0 and not debug_no_cd:
@@ -339,12 +352,12 @@ func _try_triple_shot() -> void:
 	skill_cd = TRIPLE_COOLDOWN
 	_fire_arrow()
 	burst_remaining = skill_levels.triple + 1
-	burst_timer = TRIPLE_BURST_GAP
+	burst_timer = _burst_gap()
 	notify.emit("三连发!连射 %d 支箭" % (burst_remaining + 1))
 	stats_changed.emit()
 
 
-## ---- E 技能:拉弓加速 ----
+## ---- L 技能:拉弓加速 ----
 func _try_draw_speed() -> void:
 	if dead or (skill_cd > 0.0 and not debug_no_cd):
 		if skill_cd > 0.0 and not debug_no_cd:
@@ -397,7 +410,7 @@ func take_damage(amount: float, _source: Node = null) -> void:
 		return
 	var final_amount := _incoming_damage(amount)
 	hp -= final_amount
-	modulate = Color(1.0, 0.45, 0.45)
+	modulate = Color.WHITE if reduced_flash else Color(1.0, 0.45, 0.45)
 	Sfx.play(SoundFactory.block() if blocking else SoundFactory.hurt(), -4.0)
 	DamagePopup.spawn(get_parent(), global_position + Vector2(0, -30),
 		str(int(final_amount)), Color(1.0, 0.45, 0.45))
@@ -410,6 +423,8 @@ func take_damage(amount: float, _source: Node = null) -> void:
 func _try_dodge(move_dir: Vector2) -> void:
 	if dodge_cd > 0.0 and not debug_no_cd:
 		return
+	if mvp_block_tradeoff:
+		blocking = false
 	dodge_dir = move_dir if move_dir != Vector2.ZERO else facing
 	dodge_timer = dodge_duration
 	dodge_cd = dodge_cooldown
@@ -516,7 +531,7 @@ func add_xp(amount: int) -> void:
 		leveled = true
 	if leveled:
 		Sfx.play(SoundFactory.upgrade(), -6.0)
-		notify.emit("升级!达到 %d 级,获得 1 个技能点(按 K 分配)" % level)
+		notify.emit("升级!达到 %d 级,获得 1 个技能点(按 P 分配)" % level)
 	stats_changed.emit()
 
 

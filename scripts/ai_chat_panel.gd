@@ -1,7 +1,7 @@
 extends Control
 class_name AiChatPanel
 ## 游戏内 AI 向导聊天面板(DeepSeek Responses API + 服务端 web_search)。
-## 按 J 打开/关闭;打开时游戏暂停;Key 可粘贴保存到本机 user://ai_config.cfg。
+## 按 H 打开/关闭;打开时游戏暂停;Key 可粘贴保存到本机 user://ai_config.cfg。
 
 const C_PANEL := Color(0.055, 0.045, 0.075, 0.97)
 const C_GOLD := Color(0.72, 0.55, 0.25)
@@ -197,7 +197,7 @@ func _build_ui() -> void:
 	model_edit.add_theme_stylebox_override("focus", _edit_style(true))
 	panel.add_child(model_edit)
 
-	_make_label(panel, "J 打开/关闭 · 搜索由服务端执行 · Key 仅保存在本机 user://ai_config.cfg",
+	_make_label(panel, "H 打开/关闭 · 搜索由服务端执行 · Key 仅保存在本机 user://ai_config.cfg",
 			Vector2(14, 530), 11)
 
 
