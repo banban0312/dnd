@@ -7,6 +7,7 @@
 | v0.4 | 已归档 | `v0.4/deeper-and-deeper-windows-v0.4.zip` | 41,482,789 字节 | 历史双层试玩版本 |
 | v0.5 | 已归档 | `v0.5/deeper-and-deeper-windows-v0.5.zip` | 40,319,739 字节 | J/K/L 操作、鼠标瞄准；双层，四柱 Boss 在第二层 |
 | v0.6 | 本机验证通过 | `v0.6/deeper-and-deeper-windows-v0.6.zip` | 46,151,669 字节 | 三层；第一层守望者、第三层法师/骨莲；WASD 八向瞄准，原创双配乐 |
+| v0.6.1 | 本机验证通过 | `v0.6.1/deeper-and-deeper-windows-v0.6.1.zip` | 46,154,138 字节 | 鼠标左键/GV操作；贴身吸附及守望者身体漏判修复 |
 
 `manifest.json` 记录相对于仓库根目录的包路径、精确字节数与 SHA256。`pending` 表示尚未生成，不能当作已可分发版本。v0.6 已生成并通过12组回归、PCK和全新解压目录的本机原生运行验证，第二台机器仍待验收。
 

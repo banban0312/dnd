@@ -1,6 +1,6 @@
 extends CharacterBody2D
 class_name Player
-## 玩家角色:游侠。WASD移动、空格翻滚、J普攻、K连射、L疾射、快捷栏与装备。
+## 玩家角色:游侠。WASD移动、鼠标瞄准/左键普攻、空格翻滚、G连射、V疾射。
 
 signal stats_changed
 signal inventory_changed
@@ -84,6 +84,10 @@ var visual_sprite: AnimatedSprite2D
 
 
 func _ready() -> void:
+	# Top-down actors are never moving platforms for one another.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
 	base_max_hp = max_hp
 	base_max_mp = max_mp
 	equipment.weapon = ItemData.survival_bow()
@@ -109,17 +113,16 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var move_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	_aim_at_mouse()
 	blocking = Input.is_action_pressed("block") and (not mvp_block_tradeoff or dodge_timer <= 0.0)
 
 	if dodge_timer > 0.0:
 		velocity = dodge_dir * dodge_speed
 	else:
 		velocity = move_dir * _current_speed()
-		if move_dir != Vector2.ZERO:
-			facing = move_dir
 	_update_facing(move_dir)
 
-	# The attack action is held: J or left mouse repeats after the firing cooldown.
+	# Holding the left mouse button repeats after the firing cooldown.
 	if Input.is_action_pressed("attack"):
 		_try_shoot()
 	if Input.is_action_just_pressed("skill_1"):
@@ -163,7 +166,7 @@ func _current_speed() -> float:
 	return (base_speed + gear_move_speed_bonus) * (0.75 if mvp_block_tradeoff and blocking else 1.0)
 
 
-## ---- 射击(J / 左键按住连发,弓) ----
+## ---- 射击(左键按住连发,弓) ----
 func _try_shoot() -> void:
 	if dead or (attack_cd > 0.0 and not debug_no_cd):
 		return
@@ -202,14 +205,18 @@ func _burst_gap() -> float:
 
 
 func _fire_arrow() -> void:
-	# Keyboard movement selects one of eight directions; retain it while stationary.
-	facing = facing.normalized() if not facing.is_zero_approx() else Vector2.RIGHT
+	_aim_at_mouse()
 	recoil_timer = RECOIL_TIME
 	Sfx.play(SoundFactory.shoot(), -4.0)
 	var arrow := Arrow.new()
 	arrow.setup(facing, attack_damage(), arrow_speed * _arrow_speed_mult(), equipment.weapon.pierce_count if equipment.weapon != null else 0)
 	arrow.global_position = global_position + facing * 34.0
 	get_parent().add_child(arrow)
+
+func _aim_at_mouse() -> void:
+	var aim := get_global_mouse_position() - global_position
+	if aim.length_squared() > 0.01:
+		facing = aim.normalized()
 
 
 ## ---- 动效:行走浮动 / 朝向翻转 / 射箭后坐力 / 闪避翻滚 ----
@@ -338,7 +345,7 @@ func _recalc_stats() -> void:
 	gear_crit_chance = clampf(gear_crit_chance, 0.0, 0.8)
 
 
-## ---- K 技能:三连发 ----
+## ---- G 技能:三连发 ----
 func _try_triple_shot() -> void:
 	if dead or (skill_cd > 0.0 and not debug_no_cd):
 		if skill_cd > 0.0 and not debug_no_cd:
@@ -357,7 +364,7 @@ func _try_triple_shot() -> void:
 	stats_changed.emit()
 
 
-## ---- L 技能:拉弓加速 ----
+## ---- V 技能:拉弓加速 ----
 func _try_draw_speed() -> void:
 	if dead or (skill_cd > 0.0 and not debug_no_cd):
 		if skill_cd > 0.0 and not debug_no_cd:

@@ -183,8 +183,8 @@ func _build_skill_panel(parent: Control) -> void:
 	skill_panel.visible = false
 	skill_points_label = _make_label(skill_panel, "技能点: 0", Vector2(14, 42), 16)
 	skill_points_label.add_theme_color_override("font_color", C_TITLE)
-	skill_speed_label = _make_label(skill_panel, "K 三连发 Lv1", Vector2(14, 74), 14)
-	skill_regen_label = _make_label(skill_panel, "L 拉弓加速 Lv1", Vector2(14, 100), 14)
+	skill_speed_label = _make_label(skill_panel, "G 三连发 Lv1", Vector2(14, 74), 14)
+	skill_regen_label = _make_label(skill_panel, "V 拉弓加速 Lv1", Vector2(14, 100), 14)
 	_make_button(skill_panel, "升级三连发", Vector2(272, 68), Vector2(114, 30), _on_upgrade_triple)
 	_make_button(skill_panel, "升级拉弓", Vector2(272, 94), Vector2(114, 30), _on_upgrade_draw)
 	_make_label(skill_panel, "按 P 关闭面板", Vector2(14, 240), 12)
@@ -236,8 +236,8 @@ func _refresh_stats() -> void:
 	buff_label.text = "拉弓加速中" if player.draw_speed_timer > 0.0 else ""
 	if skill_points_label != null:
 		skill_points_label.text = "技能点: %d" % player.skill_points
-		skill_speed_label.text = "K 三连发 Lv%d:连射 %d 支箭" % [player.skill_levels.triple, player.skill_levels.triple + 2]
-		skill_regen_label.text = "L 拉弓加速 Lv%d:3s 内攻击频率提升" % player.skill_levels.draw
+		skill_speed_label.text = "G 三连发 Lv%d:连射 %d 支箭" % [player.skill_levels.triple, player.skill_levels.triple + 2]
+		skill_regen_label.text = "V 拉弓加速 Lv%d:3s 内攻击频率提升" % player.skill_levels.draw
 
 
 func _refresh_inventory() -> void:

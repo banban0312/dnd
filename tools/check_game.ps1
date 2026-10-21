@@ -8,6 +8,8 @@ try {
     New-Item -ItemType Directory -Force -Path $env:APPDATA | Out-Null
     $cases = @(
         @{ Name = 'controls'; Tail = @('--script', 'res://tools/test_mvp_controls.gd'); Marker = 'MVP CONTROLS' },
+        @{ Name = 'contact-escape'; Tail = @('--script', 'res://tools/test_mvp_contact_escape.gd'); Marker = 'MVP CONTACT ESCAPE OK' },
+        @{ Name = 'warden-hitbox'; Tail = @('--script', 'res://tools/test_mvp_warden_hitbox.gd'); Marker = 'WARDEN HITBOX OK' },
         @{ Name = 'v05-combat'; Tail = @('--script', 'res://tools/test_mvp_v05.gd'); Marker = 'MVP V05 COMBAT OK' },
         @{ Name = 'special-enemies'; Tail = @('--script', 'res://tools/test_mvp_special_enemy.gd'); Marker = 'MVP SPECIAL ENEMY OK' },
         @{ Name = 'necromancer'; Tail = @('--script', 'res://tools/test_mvp_necromancer.gd'); Marker = 'NECROMANCER OK' },
@@ -22,7 +24,9 @@ try {
     )
     foreach ($case in $cases) {
         $log = Join-Path $testRoot ($case.Name + '-suite.log')
-        $engineArgs = @('--headless', '--path', $projectRoot, '--log-file', $log, '--quit-after', '2400') + $case.Tail
+        # Detailed physical contact/hitbox matrices need more ticks than short smokes.
+        $frameLimit = if ($case.Name -in @('contact-escape', 'warden-hitbox')) { '12000' } else { '2400' }
+        $engineArgs = @('--headless', '--path', $projectRoot, '--log-file', $log, '--quit-after', $frameLimit) + $case.Tail
         $output = & $GodotPath @engineArgs 2>&1
         $exitCode = $LASTEXITCODE
         $textLog = $output -join "`n"
@@ -32,6 +36,6 @@ try {
         }
         Write-Output "PASS $($case.Name): $($case.Marker)"
     }
-    Write-Output 'Game regression passed: 12 suites. Human playtest and clean-machine export remain separate gates.'
+    Write-Output 'Game regression passed: 14 suites. Human playtest and clean-machine export remain separate gates.'
 }
 finally { $env:APPDATA = $previousAppData }

@@ -15,15 +15,15 @@ func _run() -> void:
 	for enemy in get_nodes_in_group("enemies"):
 		enemy.set_physics_process(false)
 	game.player.invuln_timer = 100.0
-	await _eight_way_aim()
-	for entry in [[KEY_W, "move_up"], [KEY_A, "move_left"], [KEY_S, "move_down"], [KEY_D, "move_right"], [KEY_J, "attack"], [KEY_K, "skill_1"], [KEY_L, "skill_2"], [KEY_SPACE, "dodge"], [KEY_H, "ai_chat"], [KEY_P, "skill_panel"]]:
+	await _mouse_aim()
+	for entry in [[KEY_W, "move_up"], [KEY_A, "move_left"], [KEY_S, "move_down"], [KEY_D, "move_right"], [KEY_G, "skill_1"], [KEY_V, "skill_2"], [KEY_SPACE, "dodge"], [KEY_H, "ai_chat"], [KEY_P, "skill_panel"]]:
 		var event := _key(entry[0], true)
 		_check(event.is_action_pressed(entry[1]), "Physical key maps to %s" % entry[1])
-	for key in [KEY_Q, KEY_E, KEY_SHIFT]:
+	for key in [KEY_Q, KEY_E, KEY_SHIFT, KEY_J, KEY_K, KEY_L]:
 		var event := _key(key, true)
 		_check(not event.is_action_pressed("attack") and not event.is_action_pressed("skill_1") and not event.is_action_pressed("skill_2") and not event.is_action_pressed("dodge"), "Removed legacy combat binding %s" % OS.get_keycode_string(key))
 	_check(not _key(KEY_J, true).is_action_pressed("ai_chat"), "J no longer opens legacy AI chat")
-	_check(not _key(KEY_K, true).is_action_pressed("skill_panel") and not _key(KEY_L, true).is_action_pressed("skill_panel"), "K/L no longer open legacy skill panel")
+	_check(not _key(KEY_G, true).is_action_pressed("skill_panel") and not _key(KEY_V, true).is_action_pressed("skill_panel"), "G/V do not open legacy skill panel")
 	_check(not _key(KEY_SPACE, true).is_action_pressed("ui_accept"), "Space cannot activate focused UI buttons")
 	_check(_key(KEY_ENTER, true).is_action_pressed("ui_accept"), "Enter still accepts UI buttons")
 	var start: Vector2 = game.player.position
@@ -35,17 +35,17 @@ func _run() -> void:
 	var record_shot := func(): shots[0] += 1
 	game.player.stats_changed.connect(record_shot)
 	game.player.attack_cd = 0.0
-	Input.parse_input_event(_key(KEY_J, true))
+	Input.parse_input_event(_mouse_button(true))
 	await create_timer(game.player._current_attack_interval() * 2.2).timeout
-	Input.parse_input_event(_key(KEY_J, false))
+	Input.parse_input_event(_mouse_button(false))
 	await physics_frame
 	game.player.stats_changed.disconnect(record_shot)
-	_check(shots[0] >= 2 and game.player.attack_cd > 0 and game.player.skill_cd == 0 and game.player.mp == game.player.max_mp, "Held physical J repeats normal attack without mana or skill cooldown")
-	await _press(KEY_K)
-	_check(game.player.skill_cd > 0 and game.player.mp < game.player.max_mp, "Physical K casts triple shot")
+	_check(shots[0] >= 2 and game.player.attack_cd > 0 and game.player.skill_cd == 0 and game.player.mp == game.player.max_mp, "Held left click repeats normal attack without mana or skill cooldown")
+	await _press(KEY_G)
+	_check(game.player.skill_cd > 0 and game.player.mp < game.player.max_mp, "Physical G casts triple shot")
 	game.player.skill_cd = 0.0
-	await _press(KEY_L)
-	_check(game.player.draw_speed_timer > 0, "Physical L casts draw speed")
+	await _press(KEY_V)
+	_check(game.player.draw_speed_timer > 0, "Physical V casts draw speed")
 	await _press(KEY_SPACE)
 	_check(game.player.dodge_cd > 0, "Physical Space rolls")
 	for mode in ["pause", "inventory", "reward"]:
@@ -64,9 +64,13 @@ func _run() -> void:
 		game.player.skill_cd = 0.0
 		game.player.dodge_cd = 0.0
 		game.player.draw_speed_timer = 0.0
-		for key in [KEY_SPACE, KEY_J, KEY_K, KEY_L]:
+		for key in [KEY_SPACE, KEY_G, KEY_V]:
 			await _press(key)
-		_check(paused and game.run_state == mode, "Focused " + mode + " stays paused on Space/J/K/L")
+		Input.parse_input_event(_mouse_button(true))
+		await physics_frame
+		Input.parse_input_event(_mouse_button(false))
+		await physics_frame
+		_check(paused and game.run_state == mode, "Focused " + mode + " stays paused on Space/G/V")
 		_check(game.player.mp == mana and game.player.attack_cd == 0 and game.player.skill_cd == 0 and game.player.draw_speed_timer == 0 and game.player.dodge_cd == 0, mode + " blocks casting and dodge")
 		_check(game.player.backpack.size() == count, mode + " Space does not select/equip a reward")
 		if mode == "reward":
@@ -84,7 +88,7 @@ func _run() -> void:
 	await process_frame
 	await create_timer(0.25).timeout
 	if failures.is_empty():
-		print("MVP CONTROLS OK: physical WASD/J/K/L/Space, held J normal attack, H/P isolation, removed Q/E/Shift, focus and paused modal safety, real Boss phase/ward HUD")
+		print("MVP CONTROLS OK: physical WASD/mouse/G/V/Space, held left click normal attack, H/P isolation, removed Q/E/Shift, focus and paused modal safety, real Boss phase/ward HUD")
 		quit(0)
 	else:
 		for failure in failures:
@@ -150,36 +154,39 @@ func _boss_hud_checks() -> void:
 	_check(game.ui.boss_fill.color == Color("b96154"), "Unshielded phase II restores damage bar color")
 	await process_frame
 
-func _eight_way_aim() -> void:
+func _mouse_button(pressed: bool) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = pressed
+	return event
+
+func _mouse_aim() -> void:
 	game.player.set_physics_process(false)
-	for keys in [[KEY_D], [KEY_D, KEY_S], [KEY_S], [KEY_S, KEY_A], [KEY_A], [KEY_A, KEY_W], [KEY_W], [KEY_W, KEY_D]]:
-		game.player.position = game.world.player_spawn
-		var expected := Vector2.ZERO
-		for code in keys:
-			Input.parse_input_event(_key(code, true))
-			match code:
-				KEY_W: expected.y -= 1
-				KEY_S: expected.y += 1
-				KEY_A: expected.x -= 1
-				KEY_D: expected.x += 1
-		expected = expected.normalized()
-		Input.flush_buffered_events()
-		await physics_frame
+	var camera := game.player.get_node("Camera2D") as Camera2D
+	camera.enabled = false
+	await process_frame
+	# The headless display has no hardware pointer. Vary the real player's origin
+	# around the viewport cursor to exercise actual mouse-to-world aim and arrows.
+	for offset in [Vector2(150, 0), Vector2(-90, -120), Vector2(40, 160)]:
+		var cursor: Vector2 = game.player.get_global_mouse_position()
+		game.player.global_position = cursor - offset
 		game.player._physics_process(1.0 / 60.0)
-		print("KEYBOARD_AIM expected=", expected, " input=", Input.get_vector("move_left", "move_right", "move_up", "move_down"), " actual=", game.player.facing)
-		_check(game.player.facing.is_equal_approx(expected), "WASD selects aim " + str(expected))
-		for code in keys:
-			Input.parse_input_event(_key(code, false))
-		var mouse := InputEventMouseMotion.new()
-		mouse.position = Vector2(1200, 50)
-		mouse.global_position = mouse.position
-		Input.parse_input_event(mouse)
-		Input.flush_buffered_events()
-		await physics_frame
-		game.player._physics_process(1.0 / 60.0)
+		var expected: Vector2 = offset.normalized()
+		_check(game.player.facing.is_equal_approx(expected), "Stationary facing points at viewport cursor " + str(offset))
 		game.player._fire_arrow()
 		var shot = get_nodes_in_group("arrows").back()
-		_check(shot.direction.is_equal_approx(expected), "Real arrow retains keyboard aim after release and mouse movement " + str(expected))
-		_check(is_equal_approx(shot.direction.length(), 1.0), "Diagonal arrows keep normalized speed")
+		_check(shot.direction.is_equal_approx(expected), "Real arrow follows free-angle mouse aim " + str(offset))
+		_check(is_equal_approx(shot.direction.length(), 1.0), "Free-angle aim keeps normalized projectile speed")
 		shot.free()
+	Input.parse_input_event(_key(KEY_A, true))
+	Input.flush_buffered_events()
+	await physics_frame
+	game.player._physics_process(1.0 / 60.0)
+	var expected: Vector2 = game.player.global_position.direction_to(game.player.get_global_mouse_position())
+	_check(game.player.velocity.x < 0 and game.player.facing.dot(expected) > 0.99, "WASD movement does not replace cursor aim")
+	Input.parse_input_event(_key(KEY_A, false))
+	Input.flush_buffered_events()
+	game.player.global_position = game.world.player_spawn
+	camera.enabled = true
+	camera.reset_smoothing()
 	game.player.set_physics_process(true)

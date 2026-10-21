@@ -28,6 +28,15 @@
       "size_bytes": 46151669,
       "sha256": "2db2bea2e2db17503d53dfa280272b1f330e69528ece61037ba98f4e5dd5eae3",
       "notes": "三层；第一层四柱守望者、第三层骷髅法师/二次骨莲/四秒保护罩；WASD八向瞄准、JKL战斗、原创中世纪与电子Boss双配乐。12组回归及本机原生解压流程通过，真人平衡与新机器待验证。"
+    },
+    {
+      "version": "v0.6.1",
+      "status": "built",
+      "platform": "windows-x86_64",
+      "path": "releases/v0.6.1/deeper-and-deeper-windows-v0.6.1.zip",
+      "size_bytes": 46154138,
+      "sha256": "d4b802cfed17314da036b3aacb92319db0aac28ff475ab0558117c65dc996bb1",
+      "notes": "鼠标自由瞄准/左键普攻、WASD移动、G/V技能；修复怪物贴身继承平台速度的吸附、守望者身体与贴身箭漏判。保留0.6三层、骨莲法师和双配乐。14组回归、PCK和本机原生解压完整流程通过，待朋友复测。"
     }
   ]
 }

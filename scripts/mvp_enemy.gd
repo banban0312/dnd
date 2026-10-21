@@ -35,6 +35,10 @@ func acquire_aggro() -> void:
 		awaken()
 
 func _ready() -> void:
+	# Top-down actors are obstacles, never moving floors carrying other actors.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
 	if home_position == Vector2.ZERO:
 		home_position = global_position
 	super._ready()

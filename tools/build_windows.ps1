@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $testRoot = Join-Path $projectRoot '_test'
 $buildRoot = Join-Path $testRoot 'build'
-$version = '0.6'
+$version = '0.6.1'
 $releaseRoot = Join-Path $projectRoot ('releases/v' + $version)
 $oldAppData = $env:APPDATA
 $oldTemp = $env:TEMP
@@ -52,9 +52,9 @@ DEEPER AND DEEPER - Descent Playtest $version
 Extract the entire ZIP and run deeper-and-deeper.exe.
 Keep deeper-and-deeper.pck next to the EXE. No Godot installation is needed.
 
-WASD: move and aim in EIGHT directions. Release to retain the last aim.
-Mouse movement does not aim. Right click: block; Space: roll.
-F: chest/lift; I: inventory/equipment; J: attack; K/L: skills; 1/2/3: potions; Esc: pause.
+WASD: move. Mouse: free aim. Hold left click: normal attack.
+Right click: block; Space: roll. G: skill one (triple shot); V: skill two (rapid fire).
+F: chest/lift; I: inventory/equipment; 1/2/3: potions; Esc: pause.
 Choose a bow in the first chest, then equip it in inventory.
 Floor one: the Warden becomes invulnerable at half health. Destroy ALL FOUR
 flying stone pillars, defeat him, then extract, descend, or accept the pact.

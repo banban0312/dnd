@@ -1,8 +1,8 @@
-# deeper and deeper · 下潜试玩版0.6
+# deeper and deeper · 下潜试玩版0.6.1
 
 ## 发给别人玩
 
-完整发送`releases/v0.6/deeper-and-deeper-windows-v0.6.zip`。Windows 64位电脑完整解压后双击`deeper-and-deeper.exe`，同名PCK必须留在旁边，无需安装Godot。各历史版本统一放在`releases/`，校验值见[版本清单](../releases/manifest.json)。代码仓库不包含ZIP、EXE或模板，源码需自行构建。
+完整发送`releases/v0.6.1/deeper-and-deeper-windows-v0.6.1.zip`。Windows 64位电脑完整解压后双击`deeper-and-deeper.exe`，同名PCK必须留在旁边，无需安装Godot。各历史版本统一放在`releases/`，校验值见[版本清单](../releases/manifest.json)。代码仓库不包含ZIP、EXE或模板，源码需自行构建。
 
 源码入口：双击`start-test.cmd`，或Godot4.7.1打开`project.godot`按F5，默认`mvp.tscn`。MVP不读写旧Demo存档。
 
@@ -10,15 +10,15 @@
 
 | 操作 | 按键 |
 |---|---|
-| 移动与八向瞄准 | WASD或方向键；松开保留最后朝向 |
-| 普通射击 | J按住连续射击，也可左键；鼠标位置不影响射向 |
-| 一技能 / 二技能 | K连射 / L疾射 |
+| 移动 / 自由瞄准 | WASD或方向键 / 鼠标位置 |
+| 普通射击 | 左键按住连续射击 |
+| 一技能 / 二技能 | G连射 / V疾射 |
 | 闪避 / 格挡 | 空格 / 右键 |
 | 宝箱、升降梯 | F |
 | 背包 / 暂停 | I / Esc |
 | 快捷药剂 | 1 / 2 / 3 |
 
-角色前方金色箭头显示射向。斜向标准化，射速与弹速不增加。旧技能面板P、聊天H，避免战斗键冲突。格挡减伤同时移速×0.75、射击间隔×1.35；翻滚解除格挡。
+角色前方金色箭头跟随鼠标射向，移动与瞄准独立。旧JKL不再绑定战斗；技能面板P、聊天H。格挡减伤同时移速×0.75、射击间隔×1.35；翻滚解除格挡。
 
 ## 三层路线
 
@@ -38,13 +38,17 @@
 
 平时为原创中世纪器乐，Boss警觉后淡入激昂电子曲；切换1秒，暂停/整理背包会降低音量。Esc暂停菜单可开关背景音乐。
 
+0.6.1修复：角色不再继承另一角色的平台速度；守望者独立受击区覆盖可见身体并处理贴身初生箭。证据见[PATCH_061_REPORT.md](PATCH_061_REPORT.md)。
+
 ## 开发检查
 
 `tools/check_game.ps1`为统一回归；`tools/check_export.ps1`检查PCK；`tools/build_windows.ps1`用官方模板生成版本ZIP并更新SHA256清单。关卡见[LEVEL_DESIGN_06.md](LEVEL_DESIGN_06.md)，证据见[PLAYTEST_06_REPORT.md](PLAYTEST_06_REPORT.md)。真人手感、难度、长局稳定性及新机器仍待验收。
 
-最终12组自动回归、720p/1080p原生截图、PCK与独立ZIP本机解压流程通过。
+0.6.1最终14组回归、PCK与独立ZIP本机原生运行通过，朋友手感与实际场景复测待反馈。
 
 ## 实机预览
+
+![0.6.1操作HUD](review/mvp-controls-v061.png)
 
 ![第一层四柱](review/mvp-boss-pillars.png)
 ![第三层](review/mvp-depth3.png)

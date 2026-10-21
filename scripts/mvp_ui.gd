@@ -156,7 +156,7 @@ func show_title() -> void:
 	_button(modal, "军械库  /  试穿与比较装备", Vector2(83, 561), Vector2(468, 36), func(): game.call_deferred("start_equipment_review"))
 	_rule(modal, Vector2(83, 624), 468)
 	_label(modal, "三层禁地    /    四柱守望    /    骸骨法师", Vector2(83, 640), 13, MUTED)
-	_label(modal, "THE ASHEN KINGDOM     ·     DESCENT PLAYTEST 0.6", Vector2(83, 671), 10, GOLD)
+	_label(modal, "THE ASHEN KINGDOM     ·     DESCENT PLAYTEST 0.6.1", Vector2(83, 671), 10, GOLD)
 	_label(modal, "BENEATH THE KINGDOM, SOMETHING WAKES", Vector2(682, 661), 11, GOLD, Vector2(560, 26)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _build_hud() -> void:
@@ -191,7 +191,7 @@ func _build_hud() -> void:
 	mp_fill.color = Color("77a1aa")
 	mp_bg.add_child(mp_fill)
 	mp_text = _label(status, "", Vector2(14, 72), 9, MUTED)
-	var commands := [["J", "普攻"], ["K", "连射"], ["L", "疾射"], ["SPACE", "翻滚"]]
+	var commands := [["LMB", "普攻"], ["G", "连射"], ["V", "疾射"], ["SPACE", "翻滚"]]
 	for i in commands.size():
 		var card := _panel(hud, Vector2(410 + i * 94, 618), Vector2(82, 69), Color("141d27"))
 		_label(card, commands[i][0], Vector2(0, 6), 13, GOLD, Vector2(82, 22)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -200,7 +200,7 @@ func _build_hud() -> void:
 		skill_labels.append(label)
 	potion_text = _label(hud, "", Vector2(874, 624), 13, PAPER, Vector2(374, 54))
 	potion_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_label(hud, "WASD 移动 / 八向瞄准   ·   J 普攻   ·   F 交互", Vector2(390, 694), 11, MUTED, Vector2(600, 20)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_label(hud, "WASD 移动   ·   鼠标瞄准 / 左键普攻   ·   F 交互", Vector2(390, 694), 11, MUTED, Vector2(600, 20)).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_panel = _panel(hud, Vector2(423, 112), Vector2(434, 76), Color("141b23"))
 	boss_name = _label(boss_panel, "井 底 守 望 者", Vector2(0, 5), 13, PAPER, Vector2(434, 22))
 	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -407,8 +407,8 @@ func show_help() -> void:
 	_clear_modal()
 	var panel := _panel(modal, Vector2(302, 133), Vector2(676, 454))
 	_label(panel, "先看清，再向下。", Vector2(36, 31), 30)
-	_label(panel, "WASD 移动 / 八向瞄准       J 普攻       右键格挡\n\n空格 翻滚       K 连射       L 疾射\n\nF 搜寻宝箱 / 使用升降梯       I 装备与补给\n\n1 / 2 / 3 使用对应快捷药剂       ESC 暂停", Vector2(36, 105), 16, PAPER, Vector2(610, 202))
-	_label(panel, "WASD 八向瞄准，松开保留朝向；J 普攻，K/L 技能。\n第一层守望者半血四柱破盾；第三层法师骨莲二次绽放。\n法师举杖时四秒内全身进入金色罩，罩外翻滚也会死亡。", Vector2(36, 306), 13, MUTED, Vector2(610, 74), true)
+	_label(panel, "WASD 移动       鼠标瞄准 / 左键普攻       右键格挡\n\n空格 翻滚       G 连射       V 疾射\n\nF 搜寻宝箱 / 使用升降梯       I 装备与补给\n\n1 / 2 / 3 使用对应快捷药剂       ESC 暂停", Vector2(36, 105), 16, PAPER, Vector2(610, 202))
+	_label(panel, "WASD 移动与瞄准分离；鼠标瞄准/左键普攻，G/V 技能。\n第一层守望者半血四柱破盾；第三层法师骨莲二次绽放。\n法师举杖时四秒内全身进入金色罩，罩外翻滚也会死亡。", Vector2(36, 306), 13, MUTED, Vector2(610, 74), true)
 	_button(panel, "明白了", Vector2(36, 388), Vector2(604, 42), show_title if from_title else close_modal, true)
 
 func close_modal() -> void:

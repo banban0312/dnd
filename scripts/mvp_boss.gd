@@ -7,6 +7,81 @@ var phase_state := "combat"
 var transition_time := 0.0
 var pillars: Dictionary = {}
 
+class ArrowHurtbox extends Area2D:
+	var warden: Enemy
+	var hit_shape: CollisionShape2D
+
+	func _physics_process(_delta: float) -> void:
+		# Handles arrows born inside the volume as well as ordinary entry signals.
+		if is_instance_valid(warden) and not warden.dead:
+			for body in get_overlapping_bodies():
+				warden._receive_hurtbox_arrow(body)
+			# Area overlap lists arrive a tick later. A point-blank arrow may already be
+			# physically recovered outside the body by then; inspect its birth position
+			# before its first motion using the same transformed sensor rectangle.
+			var rectangle := hit_shape.shape as RectangleShape2D
+			var bounds := Rect2(-rectangle.size * 0.5, rectangle.size)
+			for arrow in get_tree().get_nodes_in_group("arrows"):
+				if arrow is Arrow and is_zero_approx(arrow.lifetime) and bounds.has_point(hit_shape.to_local(arrow.global_position)):
+					warden._receive_hurtbox_arrow(arrow)
+
+func _ready() -> void:
+	super._ready()
+	_setup_arrow_hurtbox()
+
+func _setup_arrow_hurtbox() -> void:
+	if visual_sprite == null:
+		return
+	# Union opaque pixels from every animation frame, in the sprite's own space.
+	# Parenting to Visual follows its scale, position, bob, and rotation automatically.
+	var bounds := Rect2()
+	var initialized := false
+	for animation in visual_sprite.sprite_frames.get_animation_names():
+		for frame in visual_sprite.sprite_frames.get_frame_count(animation):
+			var texture := visual_sprite.sprite_frames.get_frame_texture(animation, frame)
+			var opaque := Rect2(texture.get_image().get_used_rect())
+			if not opaque.has_area():
+				continue
+			if visual_sprite.centered:
+				opaque.position -= texture.get_size() * 0.5
+			opaque.position += visual_sprite.offset
+			bounds = bounds.merge(opaque) if initialized else opaque
+			initialized = true
+	if not initialized:
+		return
+	# flip_h only flips drawing, so cover both orientations without altering body collision.
+	var horizontal_extent := maxf(absf(bounds.position.x), absf(bounds.end.x))
+	bounds.position.x = -horizontal_extent
+	bounds.size.x = horizontal_extent * 2.0
+	var hurtbox := ArrowHurtbox.new()
+	hurtbox.name = "ArrowHurtbox"
+	hurtbox.warden = self
+	hurtbox.collision_layer = 0
+	hurtbox.collision_mask = 4
+	hurtbox.monitoring = true
+	hurtbox.monitorable = false
+	var collision := CollisionShape2D.new()
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = bounds.size
+	collision.shape = rectangle
+	collision.position = bounds.get_center()
+	hurtbox.hit_shape = collision
+	hurtbox.add_child(collision)
+	hurtbox.body_entered.connect(_receive_hurtbox_arrow)
+	visual_sprite.add_child(hurtbox)
+
+func _receive_hurtbox_arrow(body: Node2D) -> void:
+	if dead or not body is Arrow or body.is_queued_for_deletion():
+		return
+	var arrow := body as Arrow
+	if arrow.hit_targets.has(get_instance_id()):
+		return
+	if arrow._hit_enemy(self):
+		# Area and solid body represent one target and consume one pierce allowance.
+		arrow.add_collision_exception_with(self)
+	else:
+		arrow.queue_free()
+
 func can_be_shot() -> bool:
 	return arena_active and not shielded and _player_in_arena()
 
