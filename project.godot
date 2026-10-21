@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="dnd"
-run/main_scene="res://main.tscn"
+config/name="deeper and deeper"
+run/main_scene="res://mvp.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 

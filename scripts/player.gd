@@ -42,6 +42,7 @@ var hp: float
 var mp: float
 ## 基础最大生命(不含装备加成),升级时累加
 var base_max_hp: float = 100.0
+var base_max_mp: float = 50.0
 ## 由装备叠加的战斗属性(每帧 _recalc_stats 重新计算)
 var gear_attack_speed_mod: float = 1.0
 var gear_move_speed_bonus: float = 0.0
@@ -81,6 +82,7 @@ var visual_sprite: AnimatedSprite2D
 
 func _ready() -> void:
 	base_max_hp = max_hp
+	base_max_mp = max_mp
 	equipment.weapon = ItemData.survival_bow()
 	equipment.armor = ItemData.cloth_armor()
 	_recalc_stats()
@@ -197,7 +199,7 @@ func _fire_arrow() -> void:
 	recoil_timer = RECOIL_TIME
 	Sfx.play(SoundFactory.shoot(), -4.0)
 	var arrow := Arrow.new()
-	arrow.setup(facing, attack_damage(), arrow_speed * _arrow_speed_mult())
+	arrow.setup(facing, attack_damage(), arrow_speed * _arrow_speed_mult(), equipment.weapon.pierce_count if equipment.weapon != null else 0)
 	arrow.global_position = global_position + facing * 34.0
 	get_parent().add_child(arrow)
 
@@ -295,6 +297,11 @@ func unequip_item(slot: String) -> void:
 func _recalc_stats() -> void:
 	max_hp = base_max_hp + equipment_max_hp_bonus()
 	hp = minf(hp, max_hp)
+	max_mp = base_max_mp
+	for item in equipment.values():
+		if item != null:
+			max_mp += item.max_mp_bonus
+	mp = minf(mp, max_mp)
 	# 装备附加属性(逐件累加)
 	var atk_spd := 1.0
 	gear_move_speed_bonus = 0.0
@@ -307,12 +314,13 @@ func _recalc_stats() -> void:
 		if item == null:
 			continue
 		atk_spd *= item.attack_speed_mod
-		gear_move_speed_bonus += item.move_speed_bonus * (1.0 + item.move_speed_penalty)
+		gear_move_speed_bonus += item.move_speed_bonus + base_speed * item.move_speed_penalty
 		gear_crit_chance += item.crit_chance
 		gear_crit_damage += item.crit_damage_bonus
 		gear_lifesteal += item.lifesteal
 		gear_xp_bonus += item.xp_bonus
 		gear_fire_resist += item.fire_resist
+	gear_move_speed_bonus = clampf(gear_move_speed_bonus, -base_speed * 0.25, base_speed * 0.25)
 	gear_attack_speed_mod = clampf(atk_spd, 0.4, 3.0)
 	gear_crit_chance = clampf(gear_crit_chance, 0.0, 0.8)
 
@@ -366,18 +374,28 @@ func upgrade_skill(skill_name: String) -> void:
 
 
 ## ---- 受击与格挡(右键,通用) ----
+func _incoming_damage(amount: float) -> float:
+	if amount <= 0.0:
+		return 0.0
+	var armor_def := 0.0
+	for item in equipment.values():
+		if item != null:
+			armor_def += item.defense
+	var result := maxf(amount * 0.4, amount - armor_def)
+	if blocking:
+		var reduction := 0.5
+		if equipment.armor != null:
+			reduction = clampf(maxf(0.5, equipment.armor.block_reduction), 0.0, 0.75)
+		result *= 1.0 - reduction
+	return maxf(1.0, result)
+
+
 func take_damage(amount: float, _source: Node = null) -> void:
 	if dead or invuln_timer > 0.0:
 		return
-	var final_amount := amount
-	if blocking:
-		var reduction := 0.5
-		var armor_def := 0.0
-		if equipment.armor != null:
-			reduction = maxf(0.5, equipment.armor.block_reduction)
-			armor_def = equipment.armor.defense
-		final_amount = (amount - armor_def) * (1.0 - reduction)
-	final_amount = maxf(0.0, final_amount)
+	if amount <= 0.0:
+		return
+	var final_amount := _incoming_damage(amount)
 	hp -= final_amount
 	modulate = Color(1.0, 0.45, 0.45)
 	Sfx.play(SoundFactory.block() if blocking else SoundFactory.hurt(), -4.0)
@@ -441,11 +459,11 @@ func use_backpack_item(index: int) -> bool:
 		return false
 	if item.item_type == ItemData.ItemType.POTION:
 		if item.potion_type == ItemData.PotionType.RED:
-			hp = max_hp
-			notify.emit("使用 %s,生命值恢复至满" % item.item_name)
+			hp = minf(max_hp, hp + max_hp * 0.35)
+			notify.emit("使用 %s,回复35%最大生命" % item.item_name)
 		else:
-			mp = max_mp
-			notify.emit("使用 %s,蓝量恢复至满" % item.item_name)
+			mp = minf(max_mp, mp + max_mp * 0.40)
+			notify.emit("回复40%最大法力")
 		backpack.remove_at(index)
 		Sfx.play(SoundFactory.pickup(), -6.0)
 		inventory_changed.emit()
@@ -470,11 +488,11 @@ func _use_quick_item(index: int) -> void:
 		return
 	if item.item_type == ItemData.ItemType.POTION:
 		if item.potion_type == ItemData.PotionType.RED:
-			hp = max_hp
-			notify.emit("使用红药水,生命值恢复至满")
+			hp = minf(max_hp, hp + max_hp * 0.35)
+			notify.emit("使用红药水,回复35%最大生命")
 		elif item.potion_type == ItemData.PotionType.BLUE:
-			mp = max_mp
-			notify.emit("使用蓝药水,蓝量恢复至满")
+			mp = minf(max_mp, mp + max_mp * 0.40)
+			notify.emit("回复40%最大法力")
 	quickbar[index] = null
 	Sfx.play(SoundFactory.pickup(), -6.0)
 	inventory_changed.emit()
@@ -490,7 +508,7 @@ func add_xp(amount: int) -> void:
 		level += 1
 		skill_points += 1
 		base_max_hp += 10.0
-		max_mp += 5.0
+		base_max_mp += 5.0
 		_recalc_stats()
 		hp = max_hp
 		mp = max_mp
@@ -522,6 +540,7 @@ func export_state() -> Dictionary:
 		"skill_points": skill_points,
 		"skill_levels": skill_levels.duplicate(),
 		"base_max_hp": base_max_hp,
+		"base_max_mp": base_max_mp,
 		"max_mp": max_mp,
 		"hp": hp,
 		"mp": mp,
@@ -540,9 +559,13 @@ func import_state(data: Dictionary) -> void:
 	skill_levels["triple"] = int(raw_levels.get("triple", 1))
 	skill_levels["draw"] = int(raw_levels.get("draw", 1))
 	base_max_hp = float(data.get("base_max_hp", max_hp))
-	max_mp = float(data.get("max_mp", 50.0))
+	base_max_mp = float(data.get("base_max_mp", data.get("max_mp", 50.0)))
 	equipment.weapon = ItemData.from_name(str(data.get("weapon", "")))
 	equipment.armor = ItemData.from_name(str(data.get("armor", "")))
+	if not data.has("base_max_mp"):
+		for item in equipment.values():
+			if item != null:
+				base_max_mp -= item.max_mp_bonus
 	_recalc_stats()
 	hp = clampf(float(data.get("hp", max_hp)), 0.0, max_hp)
 	mp = clampf(float(data.get("mp", max_mp)), 0.0, max_mp)

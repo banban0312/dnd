@@ -1,4 +1,10 @@
-# Darker and Darker(dnd)— Godot 4 阶段一 Demo(游侠)
+> **当前试玩入口：中世纪像素美术测试版 0.3**
+>
+> 双击 `start-test.cmd`，或 Godot 4.7 打开项目按 F5。默认场景为 `mvp.tscn`。
+> 标题提供“踏入地城”和“军械库”，采用精细纹理的中世纪像素首屏与地宫素材。说明和实机截图见 [MVP_PLAYTEST.md](docs/MVP_PLAYTEST.md)。
+> 原 `main.tscn` Demo 保留，以下旧说明不全部适用于本轮两层测试版。
+
+# deeper and deeper(dnd)— Godot 4 阶段一 Demo(游侠)
 
 西幻暗黑风格的地牢冒险游戏(2D 俯视角),当前为阶段一可玩 Demo。完整设计见 [docs/游戏开发文档.md](docs/游戏开发文档.md)。
 

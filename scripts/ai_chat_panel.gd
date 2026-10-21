@@ -50,6 +50,9 @@ func toggle() -> void:
 
 
 func open() -> void:
+	# Another modal (such as the startup menu) already owns the pause.
+	if get_tree().paused:
+		return
 	_open = true
 	visible = true
 	get_tree().paused = true
@@ -58,6 +61,8 @@ func open() -> void:
 
 
 func close() -> void:
+	if not _open:
+		return
 	_open = false
 	visible = false
 	get_tree().paused = false

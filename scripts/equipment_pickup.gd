@@ -58,6 +58,10 @@ func _on_body_entered(body: Node2D) -> void:
 static func _pick_icon(p_item: ItemData) -> Texture2D:
 	if p_item == null:
 		return null
+	if p_item.item_id == "ranger_leather":
+		return preload("res://assets/sprites/icon_cloth.png")
+	if p_item.item_id == "piercing_bow":
+		return preload("res://assets/sprites/icon_bow.png")
 	var id := p_item.item_id
 	if id in ["survival_bow", "recurve_bow", "longbow", "elven_bow", "dragon_bow"]:
 		return preload("res://assets/sprites/icon_bow.png")

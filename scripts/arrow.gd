@@ -8,12 +8,15 @@ var direction := Vector2.RIGHT
 var speed := 700.0
 var damage := 10.0
 var lifetime := 0.0
+var pierces_remaining := 0
+var hit_targets: Dictionary = {}
 
 
-func setup(p_direction: Vector2, p_damage: float, p_speed: float = 700.0) -> void:
+func setup(p_direction: Vector2, p_damage: float, p_speed: float = 700.0, p_pierce_count: int = 0) -> void:
 	direction = p_direction.normalized()
 	damage = p_damage
 	speed = p_speed
+	pierces_remaining = maxi(0, p_pierce_count)
 	# arrow.png 的箭头朝左,旋转 180 度后对准实际朝向
 	rotation = direction.angle() + PI
 	var visual := Sprite2D.new()
@@ -60,11 +63,38 @@ func _physics_process(delta: float) -> void:
 	if lifetime >= MAX_LIFETIME:
 		queue_free()
 		return
-	var collision := move_and_collide(direction * speed * delta)
-	if collision:
+	var remaining_motion := direction * speed * delta
+	# A piercing arrow may cross several bodies in one physics tick.
+	for _step in range(8):
+		if remaining_motion.length_squared() <= 0.0001:
+			return
+		var collision := move_and_collide(remaining_motion)
+		if collision == null:
+			return
 		var collider := collision.get_collider()
 		if collider is Enemy:
-			collider.take_damage(damage, self)
-			DamagePopup.spawn(get_parent(), global_position, str(int(damage)))
-			Sfx.play(SoundFactory.hit(), -6.0)
-		queue_free()
+			var keep_flying := _hit_enemy(collider)
+			if not keep_flying:
+				queue_free()
+				return
+			# Ignore the whole body after the first hit instead of getting stuck
+			# inside its collision shape or repeatedly damaging it next frame.
+			add_collision_exception_with(collider)
+			remaining_motion = collision.get_remainder()
+		else:
+			queue_free()
+			return
+
+
+func _hit_enemy(enemy: Enemy) -> bool:
+	var target_id := enemy.get_instance_id()
+	if hit_targets.has(target_id):
+		return true
+	hit_targets[target_id] = true
+	enemy.take_damage(damage, self)
+	DamagePopup.spawn(get_parent(), global_position, str(int(damage)))
+	Sfx.play(SoundFactory.hit(), -6.0)
+	if pierces_remaining <= 0:
+		return false
+	pierces_remaining -= 1
+	return true

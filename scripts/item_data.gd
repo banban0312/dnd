@@ -31,6 +31,7 @@ enum ItemGrade { WHITE, GREEN, BLUE, PURPLE, ORANGE }
 ## ---- 药剂 ----
 @export var potion_type: PotionType = PotionType.RED
 ## ---- 武器 ----
+@export var pierce_count: int = 0
 @export var arrow_speed_mult: float = 1.0 ## 弓弩:箭速倍率
 
 
@@ -42,7 +43,7 @@ static func red_potion() -> ItemData:
 	item.item_id = "red_potion"
 	item.item_type = ItemType.POTION
 	item.item_name = "红药水"
-	item.description = "使用后生命值恢复至满"
+	item.description = "回复35%最大生命"
 	item.potion_type = PotionType.RED
 	return item
 
@@ -51,7 +52,7 @@ static func blue_potion() -> ItemData:
 	item.item_id = "blue_potion"
 	item.item_type = ItemType.POTION
 	item.item_name = "蓝药水"
-	item.description = "使用后蓝量恢复至满"
+	item.description = "回复40%最大法力"
 	item.potion_type = PotionType.BLUE
 	return item
 
@@ -63,8 +64,8 @@ static func survival_bow() -> ItemData:
 	var item := ItemData.new()
 	item.item_id = "survival_bow"
 	item.item_type = ItemType.WEAPON
-	item.item_name = "追风短弓"
-	item.description = "朴素短弓,射速轻快。攻击力 +5"
+	item.item_name = "岔枝短弓"
+	item.description = "可靠的起步武器。攻击 +5"
 	item.item_grade = ItemGrade.WHITE
 	item.damage = 5.0
 	return item
@@ -73,11 +74,23 @@ static func recurve_bow() -> ItemData:
 	var item := ItemData.new()
 	item.item_id = "recurve_bow"
 	item.item_type = ItemType.WEAPON
-	item.item_name = "猎鹰反曲弓"
-	item.description = "精良反曲弓,拉弓更快。攻击力 +8,攻速 +15%"
+	item.item_name = "斥候反曲弓"
+	item.description = "快速出箭。攻击 +6，射击间隔 -20%"
 	item.item_grade = ItemGrade.GREEN
-	item.damage = 8.0
-	item.attack_speed_mod = 0.85
+	item.damage = 6.0
+	item.attack_speed_mod = 0.8
+	return item
+
+static func piercing_bow() -> ItemData:
+	var item := ItemData.new()
+	item.item_id = "piercing_bow"
+	item.item_type = ItemType.WEAPON
+	item.item_name = "穿骨长弓"
+	item.description = "让敌人排成一线。攻击 +9，穿透1个敌人，射击间隔 +20%"
+	item.item_grade = ItemGrade.BLUE
+	item.damage = 9.0
+	item.attack_speed_mod = 1.2
+	item.pierce_count = 1
 	return item
 
 static func longbow() -> ItemData:
@@ -149,11 +162,23 @@ static func cloth_armor() -> ItemData:
 	var item := ItemData.new()
 	item.item_id = "cloth_armor"
 	item.item_type = ItemType.ARMOR
-	item.item_name = "布衣"
-	item.description = "普通布衣。防御 +1,最大生命 +15"
+	item.item_name = "旧巡林衣"
+	item.description = "基础防护。护甲 +1，生命上限 +10"
 	item.item_grade = ItemGrade.WHITE
 	item.defense = 1.0
+	item.max_hp_bonus = 10.0
+	return item
+
+static func ranger_leather() -> ItemData:
+	var item := ItemData.new()
+	item.item_id = "ranger_leather"
+	item.item_type = ItemType.ARMOR
+	item.item_name = "猎人皮甲"
+	item.description = "轻装走位。护甲 +1，生命上限 +15，移速 +5%"
+	item.item_grade = ItemGrade.GREEN
+	item.defense = 1.0
 	item.max_hp_bonus = 15.0
+	item.move_speed_bonus = 13.0
 	return item
 
 static func chainmail() -> ItemData:
@@ -171,12 +196,12 @@ static func iron_plate() -> ItemData:
 	var item := ItemData.new()
 	item.item_id = "iron_plate"
 	item.item_type = ItemType.ARMOR
-	item.item_name = "黑铁板甲"
-	item.description = "稀有重甲,坚实但略重。防御 +5,最大生命 +45,移速 -10%"
+	item.item_name = "守门锁甲"
+	item.description = "以机动换容错。护甲 +3，生命上限 +30，移速 -8%"
 	item.item_grade = ItemGrade.BLUE
-	item.defense = 5.0
-	item.max_hp_bonus = 45.0
-	item.move_speed_penalty = -0.10
+	item.defense = 3.0
+	item.max_hp_bonus = 30.0
+	item.move_speed_penalty = -0.08
 	return item
 
 static func dragonscale() -> ItemData:
@@ -287,6 +312,8 @@ static func from_name(name: String) -> ItemData:
 		"iron_shield":  return iron_shield()
 		"survival_bow": return survival_bow()
 		"recurve_bow":  return recurve_bow()
+		"piercing_bow": return piercing_bow()
+		"ranger_leather": return ranger_leather()
 		"longbow":      return longbow()
 		"elven_bow":    return elven_bow()
 		"dragon_bow":   return dragon_bow()

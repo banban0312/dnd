@@ -58,3 +58,9 @@
 |------|------|------|
 | 0x72 DungeonTileset II | CC0 | 武器图标 icon_bow/sword(裁剪自 weapon_bow/sword 帧) |
 | IvoryRed Armor pack | CC-BY 4.0 | 防具/盾/饰品 spritesheet(54 件),署名:"Armor icons by IvoryRed" |
+
+
+## Pixel art title (2026-10-21)
+
+`pixel_title.png`: generated for this project with OpenAI image generation; medieval castle, dragon and cloaked knight. Rendered unfiltered in `scripts/mvp_title_art.gd`. It is a background illustration, not a gameplay screenshot or a third-party tileset.
+Gameplay stonework, pillar and chest textures reuse the existing Dungeon Crawl assets above.

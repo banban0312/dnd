@@ -83,7 +83,7 @@ func ask(text: String) -> bool:
 	_ensure_http()
 	var body := {
 		"model": model,
-		"instructions": "你是《Darker and Darker》地牢冒险世界里的冒险向导。回答简洁、清晰,"
+		"instructions": "你是《deeper and deeper》地牢冒险世界里的冒险向导。回答简洁、清晰,"
 				+ "涉及最新信息或无法确定的内容时主动使用联网搜索。",
 		"input": history,
 		"tools": [{"type": "web_search"}],

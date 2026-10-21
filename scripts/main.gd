@@ -194,7 +194,7 @@ func _show_continue_menu() -> void:
 	dim.process_mode = Node.PROCESS_MODE_ALWAYS
 	layer.add_child(dim)
 	var title := Label.new()
-	title.text = "Darker and Darker"
+	title.text = "deeper and deeper"
 	title.position = Vector2(430, 250)
 	title.size = Vector2(420, 60)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
